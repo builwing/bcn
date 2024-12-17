@@ -1,6 +1,16 @@
 <template>
     <div class="bg-gray-100 min-h-screen py-8">
       <div class="max-w-7xl mx-auto px-4">
+        <!-- 戻るボタン -->
+        <div class="mb-4">
+          <NuxtLink
+            to="/"
+            class="inline-block px-4 py-2 bg-blue-500 text-white font-semibold rounded hover:bg-blue-600 transition duration-300"
+          >
+            ← トップページへ戻る
+          </NuxtLink>
+        </div>
+  
         <!-- タイトル -->
         <h1 class="text-4xl font-bold text-center text-gray-800 mb-8">投稿一覧</h1>
   
@@ -11,8 +21,12 @@
         <div v-else-if="error" class="text-center text-red-500 font-semibold">{{ error }}</div>
   
         <!-- 投稿データの表示 -->
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div v-for="post in posts" :key="post.id" class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+        <div v-if="!loading && !error" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div
+            v-for="post in posts"
+            :key="post.id"
+            class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
+          >
             <!-- カードヘッダー -->
             <div class="p-4 bg-blue-600 text-white">
               <h2 class="text-xl font-semibold">{{ post.title }}</h2>
@@ -62,7 +76,6 @@
   </script>
   
   <style scoped>
-  /* Tailwind CSSのline-clampを使うには、プラグインが必要です */
   .line-clamp-3 {
     display: -webkit-box;
     -webkit-line-clamp: 3;
