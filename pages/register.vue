@@ -87,48 +87,40 @@
   </template>
   
   <script setup>
-  import { ref } from 'vue';
+  import { ref, onMounted } from 'vue';
   import { useRouter } from 'vue-router';
   
   const router = useRouter();
-  const config = useRuntimeConfig();
+  const user = ref({ name: '', email: '' });
+  const isAuthenticated = ref(false);
   
-  const form = ref({
-    name: '',
-    email: '',
-    password: '',
-  });
-  
-  const passwordVisible = ref(false);
-  
-  const togglePasswordVisibility = () => {
-    passwordVisible.value = !passwordVisible.value;
-  };
-  
-  const handleRegister = async () => {
+  onMounted(() => {
     try {
-      // Laravel API に登録リクエストを送信
-      const response = await $fetch(`${config.public.apiBase}/register`, {
-        method: 'POST',
-        body: form.value,
-      });
+      const token = localStorage.getItem('token');
+      const userDataStr = localStorage.setItem('userData');
   
-      // トークンを保存し、成功時にダッシュボードへ移動
-      localStorage.setItem('token', response.token);
-      alert('登録が完了しました！ダッシュボードに移動します。');
-      router.push('/dashboard');
+      if (!token || !userDataStr) {
+        throw new Error('認証情報が存在しません');
+      }
+  
+      const userData = JSON.parse(userDataStr);
+      user.value = {
+        name: userData.name,
+        email: userData.email
+      };
+      isAuthenticated.value = true;
+  
     } catch (error) {
-      alert('登録に失敗しました。入力内容を確認してください。');
+      console.error('認証エラー:', error);
+      localStorage.removeItem('token');
+      localStorage.removeItem('userData');
+      router.push('/login');
     }
-  };
+  });
   </script>
   
   <style scoped>
   body {
     font-family: 'Arial', sans-serif;
   }
-  button {
-    font-size: 1.2rem;
-  }
   </style>
-  
