@@ -1,3 +1,37 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* リセット: 余白とパディングを削除 */
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+}
+
+/* Nuxt.js のルート要素 */
+#__nuxt,
+#app {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* カスタムコンポーネント */
+@layer components {
+    .btn-primary {
+        @apply px-4 py-2 bg-primary text-white rounded hover:bg-primary/90;
+    }
+
+    .btn-secondary {
+        @apply px-4 py-2 bg-secondary text-white rounded hover:bg-secondary/90;
+    }
+
+    .input-field {
+        @apply w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary;
+    }
+}
