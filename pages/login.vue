@@ -62,6 +62,41 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useUserStore } from '~/stores/user';
+
+const router = useRouter();
+const config = useRuntimeConfig();
+const userStore = useUserStore();
+
+const form = ref({
+  email: '',
+  password: '',
+});
+
+const handleLogin = async () => {
+  try {
+    await $fetch(config.public.sanctumEndpoint, { credentials: 'include' });
+
+    const response = await $fetch(`${config.public.apiBase}/login`, {
+      method: 'POST',
+      body: form.value,
+      credentials: 'include',
+    });
+
+    userStore.setUser({ token: response.token, user: response.user });
+
+    router.push('/dashboard');
+  } catch (error) {
+    console.error('ログインエラー:', error);
+    alert('ログインに失敗しました。');
+  }
+};
+</script>
+
+
+<!-- <script setup>
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 
 const router = useRouter();
 const config = useRuntimeConfig();
@@ -85,7 +120,7 @@ try {
     credentials: 'include',
   });
 
-  console.log('レスポンス全体:', response);
+  console.log('[login.vue:handlelogin]レスポンス全体', response);
   console.log('データ部分:', response.user);
   console.log('トークン取得前の確認:', response.token);
   const token = response.token;
@@ -99,7 +134,7 @@ try {
     throw new Error('トークンが取得できませんでした。');
   }
 
-  localStorage.setItem('token', token);
+  // localStorage.setItem('token', token);
   localStorage.setItem('user_name', user.name);
   localStorage.setItem('user_email', user.email);
 
@@ -110,4 +145,4 @@ try {
   alert('ログインに失敗しました。メールアドレスとパスワードを再確認してください。');
 }
 };  
-</script>
+</script> -->
