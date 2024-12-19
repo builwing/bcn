@@ -17,7 +17,7 @@
       </h1>
 
       <!-- ローディング中 -->
-      <div v-if="loading" class="text-center text-gray-600">
+      <div v-if="isLoading" class="text-center text-gray-600">
         データを読み込み中...
       </div>
 
@@ -28,7 +28,7 @@
 
       <!-- 投稿データの表示 -->
       <div
-        v-if="!loading && !error"
+        v-if="!isLoading && !error && posts.length > 0"
         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
       >
         <div
@@ -43,10 +43,15 @@
 
           <!-- カードコンテンツ -->
           <div class="p-6 space-y-4">
-            <p class="text-gray-700 line-clamp-3 overflow-hidden">{{ post.content }}</p>
+            <p class="text-gray-700 line-clamp-3">{{ post.content }}</p>
             <div class="flex justify-between items-center text-sm text-gray-600">
               <span>カテゴリー: <strong>{{ post.category }}</strong></span>
-              <span>評価: <strong class="text-yellow-500">{{ post.rating }}</strong></span>
+              <span>評価: <strong class="text-yellow-500">{{ post.rating }}/5</strong></span>
+            </div>
+            <!-- 投稿者と日付 -->
+            <div class="text-sm text-gray-500">
+              <p>投稿者: {{ post.user?.name }}</p>
+              <p>投稿日: {{ formatDate(post.created_at) }}</p>
             </div>
           </div>
 
@@ -56,10 +61,15 @@
               :to="`/posts/${post.id}`"
               class="text-pink-500 font-semibold hover:underline"
             >
-              詳細を見る
+              詳細を見る →
             </NuxtLink>
           </div>
         </div>
+      </div>
+
+      <!-- データがない場合 -->
+      <div v-else-if="!isLoading && !error" class="text-center text-gray-600">
+        投稿がありません。
       </div>
     </div>
   </div>
@@ -68,31 +78,43 @@
 <script setup>
 import { ref, onMounted } from "vue";
 
-const posts = ref([]); // 投稿データを格納する変数
-const loading = ref(true); // 読み込み中フラグ
-const error = ref(null); // エラーメッセージ
+const config = useRuntimeConfig();
+const posts = ref([]);
+const isLoading = ref(true);
+const error = ref(null);
 
-// APIデータ取得関数
+// 日付フォーマット関数
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat('ja-JP', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date);
+};
+
+// 投稿データ取得
 const fetchPosts = async () => {
+  isLoading.value = true;
+  error.value = null;
+
   try {
-    const response = await fetch("https://bcl.winroad.biz/api/posts");
-    if (!response.ok) throw new Error("データの取得に失敗しました。");
-    const data = await response.json();
-    posts.value = data.data; // Laravel APIのJSON��造に合わせて取得
+    const response = await $fetch(`${config.public.apiBase}/posts`, {
+      credentials: 'include'
+    });
+    posts.value = response.data;
   } catch (err) {
-    error.value = err.message;
+    console.error('投稿取得エラー:', err);
+    error.value = 'データの取得に失敗しました。';
   } finally {
-    loading.value = false;
+    isLoading.value = false;
   }
 };
 
-onMounted(fetchPosts);
+onMounted(() => {
+  fetchPosts();
+});
 </script>
-
-<style scoped>
-.truncate {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-</style>

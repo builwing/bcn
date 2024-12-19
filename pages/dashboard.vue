@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isAuthenticated" class="bg-gradient-to-b from-blue-50 to-blue-100 min-h-screen py-12 px-6">
+  <div v-if="isLogin && user" class="bg-gradient-to-b from-blue-50 to-blue-100 min-h-screen py-12 px-6">
     <div class="max-w-7xl mx-auto">
       <!-- ヘッダーセクション -->
       <div class="text-center mb-12">
@@ -11,17 +11,17 @@
 
       <!-- メインコンテンツ -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <!-- プロファイル -->
+        <!-- プロフィール -->
         <div class="bg-white rounded-lg shadow-lg p-6">
           <h2 class="text-2xl font-semibold text-gray-800 mb-4">プロフィール</h2>
           <ul class="space-y-2 text-gray-600">
-            <li><strong>名前:</strong> {{ user.name }}</li>
-            <li><strong>メールアドレス:</strong> {{ user.email }}</li>
+            <li><strong>名前:</strong> {{ userStore.user.name }}</li>
+            <li><strong>メールアドレス:</strong> {{ userStore.user.email }}</li>
           </ul>
           <div class="mt-6">
             <NuxtLink
               to="/profile"
-              class="block bg-blue-500 text-white text-center py-3 rounded-lg hover:bg-blue-600"
+              class="block bg-blue-500 text-white text-center py-3 rounded-lg hover:bg-blue-600 transition-colors"
             >
               プロフィールを編集
             </NuxtLink>
@@ -37,7 +37,7 @@
           <div class="mt-6">
             <NuxtLink
               to="/posts/create"
-              class="block bg-pink-500 text-white text-center py-3 rounded-lg hover:bg-pink-600"
+              class="block bg-pink-500 text-white text-center py-3 rounded-lg hover:bg-pink-600 transition-colors"
             >
               投稿を作成
             </NuxtLink>
@@ -53,7 +53,7 @@
           <div class="mt-6">
             <NuxtLink
               to="/posts"
-              class="block bg-green-500 text-white text-center py-3 rounded-lg hover:bg-green-600"
+              class="block bg-green-500 text-white text-center py-3 rounded-lg hover:bg-green-600 transition-colors"
             >
               投稿を表示
             </NuxtLink>
@@ -69,63 +69,24 @@
 
 <script setup>
 import { useUserStore } from '~/stores/user';
-import { onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed } from 'vue';
 
-const router = useRouter();
+// ページにauth middlewareを適用
+definePageMeta({
+  middleware: ['auth']
+});
+
 const userStore = useUserStore();
 
-const isAuthenticated = userStore.isAuthenticated;
-const user = userStore.user;
+// ユーザー情報をリアクティブに取得
+const user = computed(() => userStore.user);
+const isLogin = computed(() => userStore.isLogin);
 
-onMounted(() => {
-  if (!isAuthenticated) {
-    console.error('認証エラー: 未認証状態です');
-    router.push('/login');
+// ログイン状態が変更された時のウォッチャーを設定（必要に応じて）
+watch(isLogin, (newValue) => {
+  if (!newValue) {
+    // ログアウト状態になった場合の処理
+    console.log('ユーザーがログアウトしました');
   }
 });
 </script>
-
-
-<!-- <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-
-const router = useRouter();
-const isAuthenticated = ref(false);
-const user = ref({
-  name: '',
-  email: ''
-});
-
-onMounted(() => {
-  try {
-    const token = localStorage.getItem('token');
-    const userName = localStorage.getItem('user_name');
-    const userEmail = localStorage.getItem('user_email');
-    
-    console.log('トークンは:', token);
-    console.log('[dashboard.vue]ユーザー名は:', userName);
-    console.log('[dashboard.vue]ユーザーEメール:', userEmail);
-
-    if (!token || !userName || !userEmail) {
-      throw new Error('認証情報が存在しません');
-    }
-
-    user.value = {
-      name: userName,
-      email: userEmail
-    };
-    isAuthenticated.value = true;
-
-  } catch (error) {
-    console.error('認証エラー:', error);
-    // 認証情報をクリア
-    localStorage.removeItem('token');
-    localStorage.removeItem('user_name');
-    localStorage.removeItem('user_email');
-    // ログインページへリダイレクト
-    router.push('/login');
-  }
-});
-</script> -->

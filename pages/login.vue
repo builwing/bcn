@@ -81,39 +81,9 @@ const handleLogin = async () => {
     alert('ログインに失敗しました。');
   }
 };
-</script>
 
-
-<!-- <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { useUserStore } from '~/stores/user';
-
-const router = useRouter();
-const config = useRuntimeConfig();
-const userStore = useUserStore();
-
-const form = ref({
-  email: '',
-  password: '',
+definePageMeta({
+    middleware: ['auth']
 });
 
-const handleLogin = async () => {
-  try {
-    await $fetch(config.public.sanctumEndpoint, { credentials: 'include' });
-
-    const response = await $fetch(`${config.public.apiBase}/login`, {
-      method: 'POST',
-      body: form.value,
-      credentials: 'include',
-    });
-
-    userStore.setUser({ token: response.token, user: response.user });
-
-    router.push('/dashboard');
-  } catch (error) {
-    console.error('ログインエラー:', error);
-    alert('ログインに失敗しました。');
-  }
-};
-</script> -->
+</script>
