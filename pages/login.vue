@@ -65,6 +65,31 @@ import { useRouter } from 'vue-router';
 import { useUserStore } from '~/stores/user';
 
 const router = useRouter();
+const userStore = useUserStore();
+
+const form = ref({
+  email: '',
+  password: '',
+});
+
+const handleLogin = async () => {
+  try {
+    await userStore.login(form.value);
+    router.push('/dashboard');
+  } catch (error) {
+    console.error('ログインエラー:', error);
+    alert('ログインに失敗しました。');
+  }
+};
+</script>
+
+
+<!-- <script setup>
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useUserStore } from '~/stores/user';
+
+const router = useRouter();
 const config = useRuntimeConfig();
 const userStore = useUserStore();
 
@@ -91,58 +116,4 @@ const handleLogin = async () => {
     alert('ログインに失敗しました。');
   }
 };
-</script>
-
-
-<!-- <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-
-const router = useRouter();
-const config = useRuntimeConfig();
-
-const form = ref({
-  email: '',
-  password: '',
-});
-
-const handleLogin = async () => {
-try {
-  // Laravel Sanctumのcsrf-cookieエンドポイントへリクエスト
-  await $fetch(config.public.sanctumEndpoint, {
-    credentials: 'include',
-  });
-
-  // Laravel API にログインリクエストを送信
-  const response = await $fetch(`${config.public.apiBase}/login`, {
-    method: 'POST',
-    body: form.value,
-    credentials: 'include',
-  });
-
-  console.log('[login.vue:handlelogin]レスポンス全体', response);
-  console.log('データ部分:', response.user);
-  console.log('トークン取得前の確認:', response.token);
-  const token = response.token;
-  console.log('取得したトークン:', token);
-  const user = response.user;
-  console.log('取得したユーザー情報:', user);
-  console.log('取得したユーザー名:', user.name);
-  console.log('取得したユーザーEメール:', user.email);
-  
-  if (!token) {
-    throw new Error('トークンが取得できませんでした。');
-  }
-
-  // localStorage.setItem('token', token);
-  localStorage.setItem('user_name', user.name);
-  localStorage.setItem('user_email', user.email);
-
-  // ダッシュボードへリダイレクト
-  router.push('/dashboard');
-} catch (error) {
-  console.error('ログインエラー:', error);
-  alert('ログインに失敗しました。メールアドレスとパスワードを再確認してください。');
-}
-};  
 </script> -->
