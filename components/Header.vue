@@ -10,7 +10,7 @@
 
       <!-- ナビゲーションメニュー -->
       <nav class="hidden md:flex space-x-6 items-center">
-        <template v-if="isAuthenticated">
+        <template v-if="isLogin && user">
           <!-- 認証済みユーザーのメニュー -->
           <div class="relative group">
             <button class="flex items-center space-x-2 focus:outline-none">
@@ -93,7 +93,7 @@
       class="md:hidden bg-pink-500 text-white shadow-lg"
     >
       <nav class="flex flex-col space-y-4 p-4">
-        <template v-if="isAuthenticated">
+        <template v-if="isLogin && user">
           <NuxtLink
             to="/profile"
             class="hover:text-pink-200 transition-colors"
@@ -139,7 +139,9 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useUserStore } from '~/stores/user';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const menuOpen = ref(false);
 const toggleMenu = () => {
   menuOpen.value = !menuOpen.value;
@@ -152,18 +154,18 @@ const closeMenu = () => {
 const userStore = useUserStore();
 
 // リアクティブに監視
-const isAuthenticated = computed(() => userStore.isAuthenticated);
+const isLogin = computed(() => userStore.isLogin);
 const user = computed(() => userStore.user);
 
 // ログアウト処理
-const handleLogout = () => {
-  userStore.clearUser();
-  closeMenu();
+const handleLogout = async () => {
+  try {
+    await userStore.logout();
+    closeMenu();
+    router.push('/login');
+  } catch (error) {
+    console.error('ログアウトエラー:', error);
+    alert('ログアウトに失敗しました。');
+  }
 };
 </script>
-
-<!-- <style scoped>
-header {
-  background: linear-gradient(to right, #ed64a6, #ec4899);
-}
-</style> -->
