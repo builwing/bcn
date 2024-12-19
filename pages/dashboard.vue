@@ -68,6 +68,26 @@
 </template>
 
 <script setup>
+import { useUserStore } from '~/stores/user';
+import { onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+const userStore = useUserStore();
+
+const isAuthenticated = userStore.isAuthenticated;
+const user = userStore.user;
+
+onMounted(() => {
+  if (!isAuthenticated) {
+    console.error('認証エラー: 未認証状態です');
+    router.push('/login');
+  }
+});
+</script>
+
+
+<!-- <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 
@@ -85,8 +105,8 @@ onMounted(() => {
     const userEmail = localStorage.getItem('user_email');
     
     console.log('トークンは:', token);
-    console.log('ユーザー名は:', userName);
-    console.log('ユーザーEメール:', userEmail);
+    console.log('[dashboard.vue]ユーザー名は:', userName);
+    console.log('[dashboard.vue]ユーザーEメール:', userEmail);
 
     if (!token || !userName || !userEmail) {
       throw new Error('認証情報が存在しません');
@@ -108,4 +128,4 @@ onMounted(() => {
     router.push('/login');
   }
 });
-</script>
+</script> -->
