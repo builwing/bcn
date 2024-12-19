@@ -13,6 +13,10 @@ body {
     font-family: 'Arial', sans-serif;
 }
 
+header {
+    background: linear-gradient(to right, #ed64a6, #ec4899);
+}
+
 /* Nuxt.js のルート要素 */
 #__nuxt,
 #app {

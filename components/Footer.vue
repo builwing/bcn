@@ -8,6 +8,13 @@
           </div>
           <nav class="flex space-x-4">
             <NuxtLink
+              to="/about"
+              class="text-gray-400 hover:text-pink-400 transition-colors"
+            >
+              このサイトについて
+            </NuxtLink>
+            <NuxtLink
+            <NuxtLink
               to="/posts"
               class="text-gray-400 hover:text-pink-400 transition-colors"
             >
@@ -24,6 +31,12 @@
               class="text-gray-400 hover:text-pink-400 transition-colors"
             >
               新規登録
+            </NuxtLink>
+            <NuxtLink
+              to="/dashboard"
+              class="text-gray-400 hover:text-pink-400 transition-colors"
+            >
+              ダッシュボード
             </NuxtLink>
           </nav>
         </div>
