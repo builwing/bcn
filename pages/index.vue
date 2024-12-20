@@ -19,6 +19,12 @@
           >
             投稿一覧を見る
           </NuxtLink>
+          <NuxtLink
+            to="/posts/create"
+            class="btn-primary inline-block text-center"
+          >
+            投稿する
+          </NuxtLink>
         </div>
       </div>
 

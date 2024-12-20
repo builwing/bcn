@@ -16,7 +16,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiBase: 'https://bcl.winroad.biz/api', // Laravel API のベース URL
-      sanctumEndpoint: 'https://bcl.winroad.biz/sanctum/csrf-cookie', // Laravel API のベース URL
+      sanctumEndpoint: 'https://bcl.winroad.biz/sanctum/csrf-cookie', // Laravel Sanctumのベース URL
     },
   },
 });
