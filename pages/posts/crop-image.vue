@@ -166,12 +166,10 @@
         quality: 0.9,
       })
   
-      // result.canvas がクロップ後のHTMLCanvasElement
       // dataURLをプレビュー用に保持
       if (!result?.canvas || currentIndex.value === null) return
       const newDataURL = result.canvas.toDataURL('image/jpeg', 0.9)
       croppedImage.value = newDataURL
-    //   croppedImage.value = result.canvas.toDataURL('image/jpeg', 0.9)
   
       // Blob化してstores/images.tsに保存
       result.canvas.toBlob((blob: Blob | null) => {
