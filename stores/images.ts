@@ -73,12 +73,23 @@ export const useImageStore = defineStore('images', () => {
         return url
     }
 
+    /**
+   * すでに存在するpreviewUrls[index]を新しいURLで上書きする
+   */
+    function updatePreviewUrl(index: number, newUrl: string) {
+        previewUrls.value[index] = newUrl
+        console.log('プレビューURLを置き換えました:', {
+            インデックス: index,
+            新しいURLの長さ: newUrl.length
+        })
+    }
+
     return {
         // state 相当
         croppedImages,
         originalImages,
         previewUrls,
-
+        updatePreviewUrl,
         // computed 相当
         hasImages,
 
