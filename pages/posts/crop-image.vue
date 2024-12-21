@@ -168,19 +168,23 @@
   
       // result.canvas がクロップ後のHTMLCanvasElement
       // dataURLをプレビュー用に保持
-      if (!result?.canvas) return
-      croppedImage.value = result.canvas.toDataURL('image/jpeg', 0.9)
+      if (!result?.canvas || currentIndex.value === null) return
+      const newDataURL = result.canvas.toDataURL('image/jpeg', 0.9)
+      croppedImage.value = newDataURL
+    //   croppedImage.value = result.canvas.toDataURL('image/jpeg', 0.9)
   
       // Blob化してstores/images.tsに保存
       result.canvas.toBlob((blob: Blob | null) => {
         if (!blob || currentIndex.value === null) return
   
         const croppedFile = new File([blob], 'cropped-image.jpg', { type: 'image/jpeg' })
+
+        imageStore.updatePreviewUrl(currentIndex.value, newDataURL)
         imageStore.updateCroppedImage(currentIndex.value, croppedFile)
   
         // 少し待ってから元の画面へ戻る
         setTimeout(() => {
-          router.back()
+            router.push('/posts/create')
         }, 1000)
       }, 'image/jpeg', 0.9)
     } catch (error) {
