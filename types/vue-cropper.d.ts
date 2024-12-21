@@ -1,4 +1,3 @@
-// types/vue-cropper.d.ts
 declare module 'vue-cropper' {
     import { DefineComponent } from 'vue'
 
