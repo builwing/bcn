@@ -205,6 +205,7 @@
   import { useRouter } from 'vue-router';
   import { useRuntimeConfig, navigateTo } from '#app';
   import { useImageStore } from '~/stores/images';
+  import { useUserStore } from '~/stores/user';
   
   // ----- インターフェース定義 -----
   interface FormErrors {
@@ -227,6 +228,7 @@
   const router = useRouter();
   const config = useRuntimeConfig();
   const imageStore = useImageStore();
+  const userStore = useUserStore();
   
   // ----- フォームの状態管理 -----
   const form = reactive<FormState>({
@@ -265,50 +267,6 @@
   const handleDrop = (event: DragEvent) => {
     const files = Array.from(event.dataTransfer?.files || []);
     addImages(files);
-  };
-  
-  /**
-   * リサイズ例メソッド
-   * ※ 必要な場合のみ使用（今回はとりあえず使わないかもしれません）
-   */
-  const resizeImage = (file: File, maxWidth: number, maxHeight: number): Promise<File> => {
-    return new Promise<File>((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          let width = img.width;
-          let height = img.height;
-  
-          // 幅の制限
-          if (width > maxWidth) {
-            height = (maxWidth / width) * height;
-            width = maxWidth;
-          }
-          // 高さの制限
-          if (height > maxHeight) {
-            width = (maxHeight / height) * width;
-            height = maxHeight;
-          }
-  
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) return;
-          ctx.drawImage(img, 0, 0, width, height);
-  
-          canvas.toBlob((blob) => {
-            if (!blob) return;
-            resolve(new File([blob], file.name, { type: file.type }));
-          }, file.type);
-        };
-        if (typeof event.target?.result === 'string') {
-          img.src = event.target.result;
-        }
-      };
-      reader.readAsDataURL(file);
-    });
   };
   
   // ----- 画像追加処理 -----
@@ -389,20 +347,25 @@
       formData.append('category', form.category);
       formData.append('rating', form.rating.toString());
       formData.append('content', form.content);
-  
+
       // croppedImageがあればそちらを優先
       form.images.forEach((image, index) => {
         const croppedImage = imageStore.croppedImages[index];
         formData.append(`images[${index}]`, croppedImage || image);
       });
   
+      // FormDataの内容を確認
+        // for (const pair of formData.entries()) {
+        //     console.log(`${pair[0]}: ${pair[1]}`);
+        // }
+            // デバッグ用ログ
+        for (const [key, value] of formData.entries()) {
+            console.log(`${key}: ${value instanceof File ? value.name : value}`);
+        }
+      console.log('[create.vue] 投稿用のデータを送信します:', formData);
       // APIリクエスト
-      await $fetch(`${config.public.apiBase}/posts`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'include'
-      });
-  
+// userストアのcreatePostメソッドを呼び出し
+      await userStore.createPost(formData);
       // 成功したら投稿一覧へ
       router.push('/posts');
     } catch (error: any) {
