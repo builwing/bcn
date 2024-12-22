@@ -68,7 +68,8 @@ export const useUserStore = defineStore('user', {
                     headers: {
                         'Accept': 'application/json',
                         'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Authorization': `Bearer ${token.value}`  // トークンを Authorization ヘッダーに追加
                     }
                 });
 
@@ -152,6 +153,44 @@ export const useUserStore = defineStore('user', {
                 this.isLogin = false;
                 token.value = null;  // トークンが無効な場合は削除
                 return false;
+            }
+        },
+
+        /**
+         * 投稿作成メソッド
+         */
+        async createPost(postData: FormData) {
+            const config = useRuntimeConfig();
+            const token = useCookie('token'); // トークン取得
+
+            console.log('[createPost] トークン:', token.value);
+            console.log('[createPost] FormDataの中身:');
+            for (const [key, value] of postData.entries()) {
+                console.log(`${key}:`, value);
+            }
+
+            if (!token.value) {
+                throw new Error('認証トークンがありません');
+            }
+
+            try {
+                const response = await $fetch(`${config.public.apiBase}/posts`, {
+                    method: 'POST',
+                    body: postData,
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        // 'Content-Type': 'multipart/form-data',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Authorization': `Bearer ${token.value}`  // トークンを Authorization ヘッダーに追加
+                    },
+                });
+
+                console.log('[createPost] 投稿成功:', response);
+                return response; // 必要に応じてレスポンスを返す
+            } catch (error) {
+                console.error('[createPost] 投稿エラー:', error);
+                throw error; // 呼び出し元でエラー処理
             }
         }
     }
