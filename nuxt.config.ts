@@ -9,14 +9,24 @@ export default defineNuxtConfig({
     '@pinia-plugin-persistedstate/nuxt',
   ],
   css: [
+    "~/assets/css/tailwind.css",
     'vue-advanced-cropper/dist/style.css',
-    "~/assets/css/tailwind.css"
+
   ],
   postcss: {
     plugins: {
-      'postcss-preset-env': {}
+      'postcss-import': {},
+      'tailwindcss/nesting': {},
+      tailwindcss: {},
+      autoprefixer: {},
+      'postcss-preset-env': {
+        features: {
+          'nesting-rules': false
+        }
+      }
     }
   },
+
   runtimeConfig: {
     public: {
       apiBase: 'https://bcl.winroad.biz/api',
