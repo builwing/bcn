@@ -5,7 +5,7 @@
       <div class="mb-4">
         <NuxtLink
           to="/posts"
-          class="btn-primary inline-block text-center"
+          class="inline-block px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors"
         >
           ← 投稿一覧へ戻る
         </NuxtLink>
@@ -214,10 +214,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.btn-primary {
-  @apply px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors;
-}
-
 /* スライダーのアニメーション */
 .slide-fade-enter-active,
 .slide-fade-leave-active {
