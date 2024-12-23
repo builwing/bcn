@@ -12,8 +12,12 @@
       <nav class="hidden md:flex space-x-6 items-center">
         <template v-if="isLogin && user">
           <!-- 認証済みユーザーのメニュー -->
-          <div class="relative group">
-            <button class="flex items-center space-x-2 focus:outline-none">
+
+          
+          <div class="relative">
+            <button class="flex items-center space-x-2 focus:outline-none"
+            @click="toggleMenu"
+            >
               <span>{{ user.name }}</span>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -32,15 +36,17 @@
             </button>
             <!-- ドロップダウンメニュー -->
             <div
-              class="absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded-md shadow-lg hidden group-hover:block"
-            >
-              <NuxtLink
-                to="/profile"
-                class="block px-4 py-2 hover:bg-gray-100 transition-colors"
+                v-show="menuOpen"
+                class="absolute right-0 top-full mt-1 w-48 bg-white text-gray-800 rounded-md shadow-lg z-10"
               >
-                プロフィール
-              </NuxtLink>
-              <button
+                <NuxtLink
+                  to="/profile"
+                  class="block px-4 py-2 hover:bg-gray-100 transition-colors"
+                  @click="closeMenu"
+                >
+                  プロフィール
+                </NuxtLink>
+                  <button
                 @click="handleLogout"
                 class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors"
               >
@@ -48,6 +54,9 @@
               </button>
             </div>
           </div>
+
+
+
         </template>
         <template v-else>
           <!-- 未認証ユーザーのメニュー -->
@@ -136,16 +145,21 @@
   </header>
 </template>
 
+
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useUserStore } from '~/stores/user';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
 const menuOpen = ref(false);
+
+// メニューの開閉をトグルする関数
 const toggleMenu = () => {
   menuOpen.value = !menuOpen.value;
 };
+
+// メニューを閉じる関数
 const closeMenu = () => {
   menuOpen.value = false;
 };
@@ -168,4 +182,22 @@ const handleLogout = async () => {
     alert('ログアウトに失敗しました。');
   }
 };
+
+// ドキュメント全体でクリックイベントを監視してメニューを閉じる
+const handleClickOutside = (event) => {
+  const dropdown = document.querySelector('.relative'); // メニューのルート要素を選択
+  if (dropdown && !dropdown.contains(event.target)) {
+    closeMenu(); // メニュー外をクリックした場合に閉じる
+  }
+};
+
+// コンポーネントのマウント時にイベントリスナーを追加
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+// コンポーネントのアンマウント時にイベントリスナーを削除
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
 </script>
