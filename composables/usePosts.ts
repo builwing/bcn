@@ -129,12 +129,35 @@ export const usePosts = () => {
         }
     };
 
+    // getMyPostsメソッドを追加
+    const getMyPosts = async (category?: string) => {
+        const token = useCookie('token');
+
+        try {
+            const query = category ? `?category=${encodeURIComponent(category)}` : '';
+            const response = await $fetch<PaginatedResponse<Post>>(
+                `${baseURL}/posts/my-posts${query}`,
+                createFetchOptions({
+                    headers: {
+                        'Authorization': `Bearer ${token.value}`
+                    }
+                })
+            );
+            return { data: response, error: null };
+        } catch (error) {
+            return { data: null, error };
+        }
+    };
+
     return {
         getPosts,
         getPost,
         createPost,
         updatePost,
         deletePost,
-        searchPosts
+        searchPosts,
+        getMyPosts  // 追加
     };
+
+
 };
