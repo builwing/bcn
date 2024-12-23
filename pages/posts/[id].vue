@@ -35,11 +35,6 @@
 
         <!-- 画像スライダー -->
         <div v-if="post.images && post.images.length > 0" class="relative">
-        <!-- デバッグ情報の表示 -->
-        <!-- <div class="bg-gray-100 p-2 mb-2">
-            <p>Debug - Current Image URL: {{ post.images[currentImageIndex] }}</p>
-            <p>Debug - Total Images: {{ post.images.length }}</p>
-          </div> -->
           <!-- メイン画像表示エリア -->
           <div class="relative w-full h-[400px] rounded-lg overflow-hidden">
             <img
