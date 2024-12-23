@@ -4,7 +4,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     const userStore = useUserStore();
 
     // パブリックページのリスト（認証不要のページ）
-    const publicPages = ['/login', '/register', '/about', '/contact'];
+    const publicPages = ['/', '/login', '/register', '/about', '/contact'];
     const isPublicPage = publicPages.includes(to.path);
 
     // トークンの存在確認
