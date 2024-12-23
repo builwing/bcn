@@ -39,12 +39,12 @@
                 v-show="menuOpen"
                 class="absolute right-0 top-full mt-1 w-48 bg-white text-gray-800 rounded-md shadow-lg z-10"
               >
-                <NuxtLink
-                  to="/profile"
+              <NuxtLink
+                  to="/dashboard"
                   class="block px-4 py-2 hover:bg-gray-100 transition-colors"
                   @click="closeMenu"
                 >
-                  プロフィール
+                  ダッシュボード
                 </NuxtLink>
                   <button
                 @click="handleLogout"
@@ -54,8 +54,6 @@
               </button>
             </div>
           </div>
-
-
 
         </template>
         <template v-else>
