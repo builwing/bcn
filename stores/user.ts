@@ -97,16 +97,42 @@ export const useUserStore = defineStore('user', {
         async logout() {
             const config = useRuntimeConfig();
             const token = useCookie('token');
+            const router = useRouter();
 
             try {
-                await $fetch(`${config.public.apiBase}/logout`, {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-            } finally {
+                // クライアント側の状態をクリア
                 this.user = null;
                 this.isLogin = false;
                 token.value = null;
+
+                // 全てのクッキーを削除
+                const cookies = document.cookie.split(';');
+                for (let cookie of cookies) {
+                    const eqPos = cookie.indexOf('=');
+                    const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+                    document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+                }
+
+                // トップページへ遷移
+                await router.push('/');
+
+                // バックグラウンドでサーバー側のログアウト処理を実行
+                await $fetch(`${config.public.apiBase}/logout`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Authorization': `Bearer ${token.value}`  // トークンを Authorization ヘッダーに追加
+                    }
+                }).catch(error => {
+                    console.error('バックグラウンドログアウトエラー:', error);
+                });
+
+            } catch (error) {
+                console.error('[useUserStore] ログアウトエラー:', error);
+                throw error;
             }
         },
 
