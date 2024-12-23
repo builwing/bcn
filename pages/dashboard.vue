@@ -52,7 +52,7 @@
           </p>
           <div class="mt-6">
             <NuxtLink
-              to="/posts"
+              to="/posts/my-posts"
               class="block bg-green-500 text-white text-center py-3 rounded-lg hover:bg-green-600 transition-colors"
             >
               投稿を表示
