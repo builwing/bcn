@@ -27,7 +27,7 @@
             <option value="美容整形">美容整形</option>
             <option value="化粧品">化粧品</option>
             <option value="健康器具">健康器具</option>
-            <option value="健康器具">その他</option>
+            <option value="その他">その他</option>
           </select>
         </div>
   
@@ -82,8 +82,8 @@
                 編集
               </NuxtLink>
               <NuxtLink
-                :to="`/posts/${post.id}`"
-                class="text-pink-500 font-semibold hover:underline"
+              :to="`/posts/${post.id}/show`"
+              class="text-pink-500 font-semibold hover:underline"
               >
                 詳細を見る →
               </NuxtLink>

@@ -58,7 +58,7 @@
           <!-- カードフッター -->
           <div class="p-4 bg-gray-50 text-right">
             <NuxtLink
-              :to="`/posts/${post.id}`"
+              :to="`/posts/${post.id}/show`"
               class="text-pink-500 font-semibold hover:underline"
             >
               詳細を見る →

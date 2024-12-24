@@ -283,6 +283,14 @@
     id: number;
     url: string;
   }
+
+  interface PostImage {
+    id: number;
+    post_id: number;
+    image_path: string;
+    created_at: string;
+    updated_at: string;
+  }
   
   // ----- ルータ・ストア等の取得 -----
   const router = useRouter();
@@ -290,7 +298,7 @@
   const config = useRuntimeConfig();
   const imageStore = useImageStore();
   const { getPost, updatePost } = usePosts();
-  
+
   // ----- 状態管理 -----
   const postId = ref(route.params.id);
   const existingImages = ref<ExistingImage[]>([]);
@@ -308,7 +316,7 @@
   const fileInput = ref<HTMLInputElement | null>(null);
   
   // カテゴリーリスト
-  const categories: string[] = ['美容整形', '化粧品', '健康器具'];
+  const categories: string[] = ['美容整形', '化粧品', '健康器具', 'その他'];
   
   // ----- 投稿データの取得 -----
   onMounted(async () => {
@@ -326,10 +334,10 @@
       form.content = post.content;
   
       // 既存の画像をセット
-      existingImages.value = post.images?.map(image => ({
-        id: image.id,
-        url: image.url
-      })) || [];
+      // existingImages.value = post.images?.map(image => ({
+      //   id: image.id,
+      //   url: image.url
+      // })) || [];
   
     } catch (error) {
       console.error('投稿データの取得エラー:', error);
@@ -455,7 +463,8 @@ form.images.forEach((image, index) => {
 
 // Nuxt3 でページメタ情報を定義
 definePageMeta({
- middleware: ['auth']
+ middleware: ['auth'],
+//  path: '/posts/:id/edit'
 });
 </script>
 
