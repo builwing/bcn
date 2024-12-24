@@ -73,9 +73,28 @@ export const usePosts = () => {
         }
     };
 
+    // 投稿の削除
+    const deletePost = async (id: number) => {
+        const token = useCookie('token');
+        try {
+            const response = await $fetch(`${config.public.apiBase}/posts/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Authorization': `Bearer ${token.value}`
+                },
+            });
+            return { data: response, error: null };
+        } catch (error) {
+            return { data: null, error };
+        }
+    };
+
     return {
         getPost,
         updatePost,
-        getMyPosts
+        getMyPosts,
+        deletePost
     };
 };
