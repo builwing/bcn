@@ -1,6 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
+interface ImageState {
+    originalImages: Record<number, File>;
+    previewUrls: Record<number, string>;
+    croppedImages: Record<number, File>;
+}
 /**
  * Composition API スタイルでの Pinia ストア定義
  */
