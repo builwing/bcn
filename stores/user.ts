@@ -40,27 +40,37 @@ export const useUserStore = defineStore('user', {
         async login(credentials: { email: string; password: string }) {
             const config = useRuntimeConfig();
             const token = useCookie('token', {
-                maxAge: 60 * 60 * 24,
-                secure: false, // localhost用に設定変更
+                maxAge: 60 * 60 * 24 * 365,
+                secure: process.env.NODE_ENV === 'production',
                 sameSite: 'lax',
                 path: '/',
-                domain: 'localhost'
+                domain: process.env.NODE_ENV === 'production' ? '.winroad.biz' : 'localhost'
             });
 
             this.isLoading = true;
             console.log('[useUserStore] ログイン処理開始...');
 
             try {
-                // CSRFトークンの取得
-                await $fetch(config.public.sanctumEndpoint, {
-                    credentials: 'include',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                // 1. XSRF-TOKEN の取得
+                const csrfToken = useCookie('XSRF-TOKEN', {
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: 'lax',
+                    path: '/',
+                    domain: process.env.NODE_ENV === 'production' ? '.winroad.biz' : 'localhost'
                 });
 
-                // ログインリクエスト
+                if (!csrfToken.value) {
+                    await $fetch(config.public.sanctumEndpoint, {
+                        method: 'GET',
+                        credentials: 'include',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        }
+                    });
+                }
+
+                // 2. ログインリクエスト
                 const response = await $fetch<LoginResponse>(`${config.public.apiBase}/login`, {
                     method: 'POST',
                     body: credentials,
@@ -69,26 +79,29 @@ export const useUserStore = defineStore('user', {
                         'Accept': 'application/json',
                         'Content-Type': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest',
-                        'Authorization': `Bearer ${token.value}`  // トークンを Authorization ヘッダーに追加
+                        ...(token.value && { 'Authorization': `Bearer ${token.value}` })
                     }
                 });
 
-                console.log('[useUserStore] ログイン成功:', response);
-
+                // 3. レスポンスの処理
                 if (response.token) {
                     token.value = response.token;
                     this.user = response.user;
                     this.isLogin = true;
-                    return { success: true };
+                    return { success: true, user: response.user };
                 }
 
-                throw new Error('認証に失敗しました');
-            } catch (error) {
+                throw new Error('認証トークンが返されませんでした');
+
+            } catch (error: any) {
                 console.error('[useUserStore] ログインエラー:', error);
                 this.user = null;
                 this.isLogin = false;
                 token.value = null;
-                throw error;
+
+                // エラーメッセージの詳細化
+                const errorMessage = error.response?.data?.message || error.message || '認証に失敗しました';
+                throw new Error(errorMessage);
             } finally {
                 this.isLoading = false;
             }
@@ -96,27 +109,29 @@ export const useUserStore = defineStore('user', {
 
         async logout() {
             const config = useRuntimeConfig();
-            const token = useCookie('token');
             const router = useRouter();
 
+            const cookieOptions = {
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax' as const,
+                path: '/',
+                domain: process.env.NODE_ENV === 'production' ? '.winroad.biz' : 'localhost'
+            };
+
             try {
-                // クライアント側の状態をクリア
-                this.user = null;
-                this.isLogin = false;
-                token.value = null;
+                const token = useCookie('token', cookieOptions);
 
-                // 全てのクッキーを削除
-                const cookies = document.cookie.split(';');
-                for (let cookie of cookies) {
-                    const eqPos = cookie.indexOf('=');
-                    const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
-                    document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
-                }
+                // CSRFトークンを取得
+                await $fetch(config.public.sanctumEndpoint, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
 
-                // トップページへ遷移
-                await router.push('/');
-
-                // バックグラウンドでサーバー側のログアウト処理を実行
+                // ログアウトリクエスト
                 await $fetch(`${config.public.apiBase}/logout`, {
                     method: 'POST',
                     credentials: 'include',
@@ -124,15 +139,33 @@ export const useUserStore = defineStore('user', {
                         'Accept': 'application/json',
                         'Content-Type': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest',
-                        'Authorization': `Bearer ${token.value}`  // トークンを Authorization ヘッダーに追加
+                        ...(token.value && { 'Authorization': `Bearer ${token.value}` })
                     }
-                }).catch(error => {
-                    console.error('バックグラウンドログアウトエラー:', error);
                 });
 
-            } catch (error) {
+                // クライアント側の状態をクリア
+                this.user = null;
+                this.isLogin = false;
+
+                // クッキーを削除
+                const cookies = [token,
+                    useCookie('XSRF-TOKEN', cookieOptions),
+                    useCookie('laravel_session', cookieOptions)
+                ];
+
+                cookies.forEach(cookie => cookie.value = null);
+
+                if (process.client) {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                }
+
+                await router.push('/');
+                return { success: true };
+
+            } catch (error: any) {
                 console.error('[useUserStore] ログアウトエラー:', error);
-                throw error;
+                throw new Error(error.response?.data?.message || error.message || 'ログアウトに失敗しました');
             }
         },
 
@@ -181,7 +214,6 @@ export const useUserStore = defineStore('user', {
                 return false;
             }
         },
-
         /**
          * 投稿作成メソッド
          */
