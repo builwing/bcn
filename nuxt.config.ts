@@ -8,6 +8,26 @@ export default defineNuxtConfig({
     }],
     '@pinia-plugin-persistedstate/nuxt',
   ],
+  imports: {
+    autoImport: true,
+    dirs: ['stores', 'composables']
+  },
+  typescript: {
+    strict: true,
+    typeCheck: true,
+    shim: false,
+    tsConfig: {
+      compilerOptions: {
+        moduleResolution: "bundler",
+        allowImportingTsExtensions: true,
+        paths: {
+          "~/*": ["./*"],
+          "@/*": ["./*"]
+        },
+        types: ["@pinia/nuxt", "@types/node"]
+      }
+    }
+  },
   css: [
     "~/assets/css/tailwind.css",
     'vue-advanced-cropper/dist/style.css',
@@ -60,8 +80,4 @@ export default defineNuxtConfig({
       ]
     }
   },
-  typescript: {
-    strict: true,
-    typeCheck: false  // typeCheckをfalseに設定
-  }
 });
