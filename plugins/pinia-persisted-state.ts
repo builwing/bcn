@@ -1,4 +1,4 @@
-import { defineNuxtPlugin } from '#app';
+import { defineNuxtPlugin } from 'nuxt/app';
 import type { PiniaPluginContext } from 'pinia';
 import { type Pinia } from 'pinia';
 

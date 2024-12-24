@@ -203,7 +203,7 @@
   <script setup lang="ts">
   import { ref, reactive } from 'vue';
   import { useRouter } from 'vue-router';
-  import { useRuntimeConfig, navigateTo } from '#app';
+  import { useRuntimeConfig, navigateTo } from 'nuxt/app';
   import { useImageStore } from '~/stores/images';
   import { useUserStore } from '~/stores/user';
   
