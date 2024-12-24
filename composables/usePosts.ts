@@ -1,147 +1,71 @@
 // composables/usePosts.ts
-import { useApi } from '~/composables/useApi';
-import type { Post, ApiResponse, PaginatedResponse, PostCreateData, PostUpdateData } from '~/types/api';
-import type { NitroFetchRequest, NitroFetchOptions } from 'nitropack';
+import { useRuntimeConfig } from 'nuxt/app'
+
+export interface Post {
+    id: number;
+    title: string;
+    category: string;
+    content: string;
+    rating: number;
+    images: any[];
+    user_id: number;
+    created_at: string;
+    updated_at: string;
+}
+
+interface ApiResponse<T> {
+    data: T;
+    message?: string;
+}
+
+
+interface PaginatedResponse<T> {
+    data: T[];
+    meta: {
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+    };
+}
 
 export const usePosts = () => {
-    const { baseURL, defaultOptions } = useApi();
+    const config = useRuntimeConfig()
 
-    // 拡張オプションを作成するヘルパー関数
-    const createFetchOptions = <T = unknown>(
-        options?: Partial<NitroFetchOptions<NitroFetchRequest>>
-    ): NitroFetchOptions<NitroFetchRequest> => {
-        return {
-            ...defaultOptions,
-            ...options,
-        };
-    };
-
-    // 投稿一覧の取得
-    const getPosts = async (page: number = 1) => {
-        try {
-            const response = await $fetch<PaginatedResponse<Post>>(`${baseURL}/posts`,
-                createFetchOptions({
-                    params: { page }
-                })
-            );
-            return { data: response, error: null };
-        } catch (error) {
-            return { data: null, error };
-        }
-    };
-
-    // 投稿詳細の取得
     const getPost = async (id: number) => {
         try {
-            const response = await $fetch<ApiResponse<Post>>(
-                `${baseURL}/posts/${id}`,
-                createFetchOptions()
-            );
+            const response = await $fetch<{ data: Post }>(`${config.public.apiBase}/posts/${id}`);
             return { data: response, error: null };
         } catch (error) {
             return { data: null, error };
         }
-    };
+    }
 
-    // 新規投稿の作成
-    const createPost = async (postData: PostCreateData) => {
-        const formData = new FormData();
-        Object.entries(postData).forEach(([key, value]) => {
-            if (key === 'images' && Array.isArray(value)) {
-                value.forEach((image: File) => {
-                    formData.append('images[]', image);
-                });
-            } else {
-                formData.append(key, String(value));
-            }
-        });
-
+    const updatePost = async (postData: any) => {
         try {
-            const response = await $fetch<ApiResponse<Post>>(
-                `${baseURL}/posts`,
-                createFetchOptions({
-                    method: 'POST',
-                    body: formData
-                })
-            );
-            return { data: response, error: null };
+            const response = await $fetch(`${config.public.apiBase}/posts/${postData.id}`, {
+                method: 'POST',
+                body: postData
+            })
+            return { data: response, error: null }
         } catch (error) {
-            return { data: null, error };
+            return { data: null, error }
         }
-    };
+    }
 
-    // 投稿の更新
-    const updatePost = async (postData: PostUpdateData) => {
-        const formData = new FormData();
-        formData.append('_method', 'PUT');
-
-        Object.entries(postData).forEach(([key, value]) => {
-            if (key === 'images' && Array.isArray(value)) {
-                value.forEach((image: File) => {
-                    formData.append('images[]', image);
-                });
-            } else {
-                formData.append(key, String(value));
-            }
-        });
-
-        try {
-            const response = await $fetch<ApiResponse<Post>>(
-                `${baseURL}/posts/${postData.id}`,
-                createFetchOptions({
-                    method: 'POST',
-                    body: formData
-                })
-            );
-            return { data: response, error: null };
-        } catch (error) {
-            return { data: null, error };
-        }
-    };
-
-    // 投稿の削除
-    const deletePost = async (id: number) => {
-        try {
-            const response = await $fetch<ApiResponse<null>>(
-                `${baseURL}/posts/${id}`,
-                createFetchOptions({
-                    method: 'DELETE'
-                })
-            );
-            return { data: response, error: null };
-        } catch (error) {
-            return { data: null, error };
-        }
-    };
-
-    // 投稿の検索
-    const searchPosts = async (query: string, page: number = 1) => {
-        try {
-            const response = await $fetch<PaginatedResponse<Post>>(
-                `${baseURL}/posts/search`,
-                createFetchOptions({
-                    params: { q: query, page }
-                })
-            );
-            return { data: response, error: null };
-        } catch (error) {
-            return { data: null, error };
-        }
-    };
-
-    // getMyPostsメソッドを追加
+    // 自分の投稿の取得
     const getMyPosts = async (category?: string) => {
         const token = useCookie('token');
 
         try {
             const query = category ? `?category=${encodeURIComponent(category)}` : '';
             const response = await $fetch<PaginatedResponse<Post>>(
-                `${baseURL}/posts/my-posts${query}`,
-                createFetchOptions({
+                `${config.public.apiBase}/posts/my-posts${query}`,
+                {
                     headers: {
                         'Authorization': `Bearer ${token.value}`
                     }
-                })
+                }
             );
             return { data: response, error: null };
         } catch (error) {
@@ -150,14 +74,8 @@ export const usePosts = () => {
     };
 
     return {
-        getPosts,
         getPost,
-        createPost,
         updatePost,
-        deletePost,
-        searchPosts,
-        getMyPosts  // 追加
+        getMyPosts
     };
-
-
 };
