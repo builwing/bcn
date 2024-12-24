@@ -2,13 +2,10 @@
   <div class="bg-gray-100 min-h-screen py-8">
     <div class="max-w-7xl mx-auto px-4">
       <!-- 戻るボタン -->
-      <div class="mb-4">
-        <NuxtLink
-          to="/dashboard"
-          class="btn-primary inline-block text-center"
-        >
-          ← ダッシュボードへ戻る
-        </NuxtLink>
+      <div class="mb-8">
+        <button @click="router.back()" class="btn-primary inline-block mb-4">
+          ← 前のページへ戻る
+        </button>
       </div>
 
       <!-- タイトル -->
@@ -81,7 +78,7 @@
               編集
             </NuxtLink>
             <NuxtLink
-              :to="`/posts/${post.id}`"
+              :to="`/posts/${post.id}/show`"
               class="text-pink-500 font-semibold hover:underline"
             >
               詳細を見る →
@@ -101,6 +98,11 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { usePosts } from '~/composables/usePosts';
+import { useRouter, useRoute } from 'vue-router';
+
+// ルータの取得
+const router = useRouter();
+const route = useRoute();
 
 const { getMyPosts } = usePosts();
 const posts = ref([]);

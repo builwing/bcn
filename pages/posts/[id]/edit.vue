@@ -3,9 +3,9 @@
     <div class="max-w-4xl mx-auto px-4">
       <!-- ヘッダー部分 -->
       <div class="mb-8">
-        <NuxtLink :to="`/posts/${postId}`" class="btn-primary inline-block mb-4">
-          ← 投稿詳細へ戻る
-        </NuxtLink>
+        <button @click="router.back()" class="btn-primary inline-block mb-4">
+          ← 前のページへ戻る
+        </button>
         <h1 class="text-3xl font-bold text-gray-800">投稿の編集</h1>
       </div>
 
@@ -233,7 +233,10 @@
           </div>
         </div>
 
-        <!-- 送信ボタン -->
+
+
+
+<!-- 送信ボタン -->
         <div class="flex justify-end space-x-4">
           <button
             type="button"
@@ -248,6 +251,14 @@
             :disabled="isSubmitting"
           >
             {{ isSubmitting ? '更新中...' : '更新する' }}
+          </button>
+          <button
+            type="button"
+            @click="confirmDelete"
+            class="btn-danger"
+            :disabled="isSubmitting"
+          >
+            削除する
           </button>
         </div>
       </form>
@@ -289,7 +300,33 @@ const router = useRouter();
 const route = useRoute();
 const config = useRuntimeConfig();
 const imageStore = useImageStore();
-const { getPost, updatePost } = usePosts();
+const { getPost, updatePost, deletePost } = usePosts();
+
+// ----- 削除処理 -----
+const confirmDelete = async () => {
+  const confirmResult = window.confirm('この投稿を削除しますか？この操作は取り消せません。');
+  if (!confirmResult) {
+    return;
+  }
+  try {
+    isSubmitting.value = true;
+    console.log('削除処理を開始します...');
+    const response = await deletePost(Number(postId.value));
+    if (response.error) {
+      console.error('削除エラー:', response.error);
+      alert('削除に失敗しました。');
+      return;
+    }
+    console.log('削除が完了しました:', response);
+    alert('投稿が削除されました。');
+    router.push('/posts');
+  } catch (error) {
+    console.error('削除処理中にエラーが発生しました:', error);
+    alert('削除に失敗しました。');
+  } finally {
+    isSubmitting.value = false;
+  }
+};
 
 // ----- 状態管理 -----
 const postId = ref(route.params.id);
@@ -433,7 +470,7 @@ const handleSubmit = async () => {
     formData.append('rating', form.rating.toString());
     formData.append('content', form.content);
     
-    // 残っている既存の画像のIDを送信
+    // 残っている既���の画像のIDを送信
     existingImages.value.forEach((image, index) => {
       formData.append(`existing_images[${index}]`, image.id.toString());
     });
