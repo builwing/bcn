@@ -1,73 +1,91 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
+interface ImageData {
+    file: File;
+    previewUrl: string;
+}
+
 export const useImageStore = defineStore('images', () => {
-    const croppedImages = ref<Record<number, File>>({})
-    const originalImages = ref<Record<number, File>>({})
-    const previewUrls = ref<Record<number, string>>({})
+    // 画像データを一元管理
+    const images = ref<Record<number, ImageData>>({})
 
-    const hasImages = computed(() => Object.keys(previewUrls.value).length > 0)
+    // 画像が存在するかどうかの判定
+    const hasImages = computed(() => Object.keys(images.value).length > 0)
 
-    function updateCroppedImage(index: number, file: File) {
-        console.log('クロップ画像を更新:', { index, file })
-        croppedImages.value = {
-            ...croppedImages.value,
-            [index]: file
+    // 画像の追加（新規追加時）
+    function setImage(index: number, file: File, previewUrl: string) {
+        console.log('画像を設定:', {
+            インデックス: index,
+            ファイル名: file.name,
+            ファイルサイズ: file.size
+        })
+
+        images.value[index] = {
+            file,
+            previewUrl
         }
     }
 
-    function setOriginalImage(index: number, file: File, previewUrl: string) {
-        console.log('オリジナル画像を設定:', { index, file })
-        originalImages.value = {
-            ...originalImages.value,
-            [index]: file
-        }
-        previewUrls.value = {
-            ...previewUrls.value,
-            [index]: previewUrl
-        }
-    }
+    // 画像の更新（クロップ時）
+    function updateImage(index: number, file: File, previewUrl: string) {
+        console.log('画像を更新:', {
+            インデックス: index,
+            ファイル名: file.name,
+            ファイルサイズ: file.size
+        })
 
-    function updatePreviewUrl(index: number, newUrl: string) {
-        console.log('プレビューURLを更新:', { index })
-        previewUrls.value = {
-            ...previewUrls.value,
-            [index]: newUrl
+        if (images.value[index]) {
+            images.value[index] = {
+                file,
+                previewUrl
+            }
         }
     }
 
-    function getPreviewUrl(index: number) {
-        return previewUrls.value[index]
+    // プレビューURLの取得
+    function getPreviewUrl(index: number): string | undefined {
+        return images.value[index]?.previewUrl
     }
 
+    // 画像の削除
     function removeImage(index: number) {
-        const { [index]: _, ...restCroppedImages } = croppedImages.value
-        const { [index]: __, ...restOriginalImages } = originalImages.value
-        const { [index]: ___, ...restPreviewUrls } = previewUrls.value
-
-        croppedImages.value = restCroppedImages
-        originalImages.value = restOriginalImages
-        previewUrls.value = restPreviewUrls
+        console.log('画像を削除:', { インデックス: index })
+        delete images.value[index]
     }
 
-    // clearImagesは投稿成功時のみ使用
+    // 全画像のクリア
     function clearImages() {
-        croppedImages.value = {}
-        originalImages.value = {}
-        previewUrls.value = {}
+        console.log('全画像をクリア')
+        images.value = {}
+    }
+
+    // 画像の取得
+    function getImage(index: number): ImageData | undefined {
+        return images.value[index]
+    }
+
+    // 全画像の取得
+    function getAllImages(): ImageData[] {
+        return Object.values(images.value)
+    }
+
+    // インデックスの取得
+    function getImageIndices(): number[] {
+        return Object.keys(images.value).map(Number).sort((a, b) => a - b)
     }
 
     return {
-        croppedImages,
-        originalImages,
-        previewUrls,
+        images,
         hasImages,
-        updateCroppedImage,
-        setOriginalImage,
+        setImage,
+        updateImage,
+        getPreviewUrl,
         removeImage,
         clearImages,
-        getPreviewUrl,
-        updatePreviewUrl
+        getImage,
+        getAllImages,
+        getImageIndices
     }
 }, {
     persist: true
