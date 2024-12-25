@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 
+// 型定義の拡張
 interface State {
     user: User | null;
     isLogin: boolean;
@@ -16,6 +17,19 @@ interface LoginResponse {
     user: User;
     token: string;
     success: boolean;
+}
+
+// API レスポンスの型定義を追加
+interface UserResponse {
+    user: User;
+    roles: string[];
+    permissions: string[];
+}
+
+// ユーザー情報取得用のエラー型定義
+interface ApiError {
+    message: string;
+    errors?: Record<string, string[]>;
 }
 
 /**
@@ -37,144 +51,14 @@ export const useUserStore = defineStore('user', {
     }),
 
     actions: {
-        async login(credentials: { email: string; password: string }) {
-            const config = useRuntimeConfig();
-            const token = useCookie('token', {
-                maxAge: 60 * 60 * 24 * 365,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'lax',
-                path: '/',
-                domain: process.env.NODE_ENV === 'production' ? '.winroad.biz' : 'localhost'
-            });
+        // ... 他のアクション
 
-            this.isLoading = true;
-            console.log('[useUserStore] ログイン処理開始...');
-
-            try {
-                // 1. XSRF-TOKEN の取得
-                const csrfToken = useCookie('XSRF-TOKEN', {
-                    secure: process.env.NODE_ENV === 'production',
-                    sameSite: 'lax',
-                    path: '/',
-                    domain: process.env.NODE_ENV === 'production' ? '.winroad.biz' : 'localhost'
-                });
-
-                if (!csrfToken.value) {
-                    await $fetch(config.public.sanctumEndpoint, {
-                        method: 'GET',
-                        credentials: 'include',
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest',
-                        }
-                    });
-                }
-
-                // 2. ログインリクエスト
-                const response = await $fetch<LoginResponse>(`${config.public.apiBase}/login`, {
-                    method: 'POST',
-                    body: credentials,
-                    credentials: 'include',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        ...(token.value && { 'Authorization': `Bearer ${token.value}` })
-                    }
-                });
-
-                // 3. レスポンスの処理
-                if (response.token) {
-                    token.value = response.token;
-                    this.user = response.user;
-                    this.isLogin = true;
-                    return { success: true, user: response.user };
-                }
-
-                throw new Error('認証トークンが返されませんでした');
-
-            } catch (error: any) {
-                console.error('[useUserStore] ログインエラー:', error);
-                this.user = null;
-                this.isLogin = false;
-                token.value = null;
-
-                // エラーメッセージの詳細化
-                const errorMessage = error.response?.data?.message || error.message || '認証に失敗しました';
-                throw new Error(errorMessage);
-            } finally {
-                this.isLoading = false;
-            }
-        },
-
-        async logout() {
-            const config = useRuntimeConfig();
-            const router = useRouter();
-
-            const cookieOptions = {
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'lax' as const,
-                path: '/',
-                domain: process.env.NODE_ENV === 'production' ? '.winroad.biz' : 'localhost'
-            };
-
-            try {
-                const token = useCookie('token', cookieOptions);
-
-                // CSRFトークンを取得
-                await $fetch(config.public.sanctumEndpoint, {
-                    method: 'GET',
-                    credentials: 'include',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-
-                // ログアウトリクエスト
-                await $fetch(`${config.public.apiBase}/logout`, {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        ...(token.value && { 'Authorization': `Bearer ${token.value}` })
-                    }
-                });
-
-                // クライアント側の状態をクリア
-                this.user = null;
-                this.isLogin = false;
-
-                // クッキーを削除
-                const cookies = [token,
-                    useCookie('XSRF-TOKEN', cookieOptions),
-                    useCookie('laravel_session', cookieOptions)
-                ];
-
-                cookies.forEach(cookie => cookie.value = null);
-
-                if (process.client) {
-                    localStorage.clear();
-                    sessionStorage.clear();
-                }
-
-                await router.push('/');
-                return { success: true };
-
-            } catch (error: any) {
-                console.error('[useUserStore] ログアウトエラー:', error);
-                throw new Error(error.response?.data?.message || error.message || 'ログアウトに失敗しました');
-            }
-        },
-
-        async checkAuth() {
+        async checkAuth(): Promise<boolean> {
             console.log('checkAuthを開始します');
             const token = useCookie('token');
 
             if (!token.value) {
-                console.log('[checkAuth] トークンがありません');
+                console.log('[userstore:checkAuth] トークンがありません');
                 this.user = null;
                 this.isLogin = false;
                 return false;
@@ -184,42 +68,51 @@ export const useUserStore = defineStore('user', {
             const config = useRuntimeConfig();
 
             try {
-                // ユーザー情報を取得
-                const response = await $fetch(`${config.public.apiBase}/user`, {
+                // ユーザー情報を取得（型アサーションを修正）
+                const response = await $fetch<UserResponse>(`${config.public.apiBase}/user`, {
                     credentials: 'include',
                     headers: {
                         'Accept': 'application/json',
                         'Content-Type': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest',
-                        'Authorization': `Bearer ${token.value}`  // トークンを Authorization ヘッダーに追加
+                        'Authorization': `Bearer ${token.value}`
                     }
-                }) as { user: User };
+                });
 
                 console.log('[checkAuth] ユーザー情報取得成功:', response);
 
-                if (response.user) {
+                if (response?.user) {
                     this.user = response.user;
                     this.isLogin = true;
                     return true;
                 }
 
-                // ユーザー情報が取得できない場合は認証失敗とみなす
                 throw new Error('ユーザー情報の取得に失敗しました');
 
             } catch (error) {
                 console.error('[checkAuth] エラー:', error);
+                const apiError = error as ApiError;
                 this.user = null;
                 this.isLogin = false;
-                token.value = null;  // トークンが無効な場合は削除
-                return false;
+                token.value = null;
+                throw new Error(apiError.message || 'ユーザー情報の取得に失敗しました');
             }
         },
-        /**
-         * 投稿作成メソッド
-         */
+
         async createPost(postData: FormData) {
+            // 戻り値の型定義を追加
+            interface PostResponse {
+                message: string;
+                post: {
+                    id: number;
+                    title: string;
+                    content: string;
+                    // 他の必要なフィールドを追加
+                };
+            }
+
             const config = useRuntimeConfig();
-            const token = useCookie('token'); // トークン取得
+            const token = useCookie('token');
 
             console.log('[createPost] トークン:', token.value);
             console.log('[createPost] FormDataの中身:');
@@ -232,23 +125,23 @@ export const useUserStore = defineStore('user', {
             }
 
             try {
-                const response = await $fetch(`${config.public.apiBase}/posts`, {
+                const response = await $fetch<PostResponse>(`${config.public.apiBase}/posts`, {
                     method: 'POST',
                     body: postData,
                     credentials: 'include',
                     headers: {
                         'Accept': 'application/json',
-                        // 'Content-Type': 'multipart/form-data',
                         'X-Requested-With': 'XMLHttpRequest',
-                        'Authorization': `Bearer ${token.value}`  // トークンを Authorization ヘッダーに追加
-                    },
+                        'Authorization': `Bearer ${token.value}`
+                    }
                 });
 
                 console.log('[createPost] 投稿成功:', response);
-                return response; // 必要に応じてレスポンスを返す
+                return response;
             } catch (error) {
                 console.error('[createPost] 投稿エラー:', error);
-                throw error; // 呼び出し元でエラー処理
+                const apiError = error as ApiError;
+                throw new Error(apiError.message || '投稿の作成に失敗しました');
             }
         }
     }
