@@ -3,12 +3,12 @@
     <div class="max-w-4xl mx-auto px-4">
       <!-- 戻るボタン -->
       <div class="mb-4">
-        <NuxtLink
-          to="/posts"
+        <button
+          @click="goBack"
           class="btn-primary inline-block text-center"
         >
-          ← 投稿一覧へ戻る
-        </NuxtLink>
+          ← 前のページに戻る
+        </button>
       </div>
 
       <!-- ローディング中 -->
@@ -120,16 +120,27 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import type { Post } from '~/types/api';
 import { usePosts } from '~/composables/usePosts';
+import { useRouter } from 'vue-router';
 
 // 投稿関連のcomposablesを使用
 const { getPost } = usePosts();
 const route = useRoute();
+const router = useRouter();
 
 // 状態管理
 const post = ref<Post | null>(null);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
 const currentImageIndex = ref(0);
+
+// 戻る機能
+const goBack = () => {
+  if (window.history.length > 1) {
+    router.back(); // ヒストリーがある場合は前のページに戻る
+  } else {
+    router.push('/posts'); // デフォルトの投稿一覧ページに戻る
+  }
+};
 
 // 日付フォーマット関数
 const formatDate = (dateString: string) => {
@@ -216,6 +227,7 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown);
 });
+
 </script>
 
 <style scoped>

@@ -280,6 +280,18 @@ import { useRouter, useRoute } from 'vue-router'
 import { useImageStore } from '~/stores/images'
 import { usePosts } from '~/composables/usePosts'
 
+// APIレスポンスの型定義を追加
+interface PostResponse {
+  data: Post;
+  error?: Error;
+}
+
+// GetPost関数の戻り値の型を明確に
+interface APIResponse<T> {
+  data: T;
+  error?: Error;
+}
+
 // 型定義
 interface Post {
   id: number
@@ -355,6 +367,7 @@ onMounted(async () => {
     }
 
     const response = await getPost(postId.value)
+    console.log('APIレスポンス:', response)
     if (!response.data) {
       throw new Error('投稿データの取得に失敗しました')
     }
@@ -369,12 +382,15 @@ onMounted(async () => {
     form.content = post.content
 
     // 既存の画像をセット
-    if (post.images && post.images.length > 0) {
-      existingImages.value = post.images.map((image: PostImage) => ({
+    if (post.images && Array.isArray(post.images)) {
+      console.log('既存画像データ:', existingImages.value);
+      existingImages.value = post.images.map(image => ({
         id: image.id,
         url: image.url
       }))
       console.log('既存の画像をセット:', existingImages.value)
+    } else {
+      console.log('画像データなし')
     }
 
   } catch (error) {
@@ -515,6 +531,15 @@ const handleSubmit = async () => {
     isSubmitting.value = false
   }
 }
+
+const handleImageLoadError = (index: number) => {
+  console.error(`画像の読み込みに失敗: index=${index}`)
+  // 必要に応じてエラー処理を追加
+}
+// 状態変更を監視
+watch(existingImages, (newImages) => {
+  console.log('既存画像の状態が変更されました:', newImages)
+}, { deep: true })
 
 // ページメタ情報
 definePageMeta({
