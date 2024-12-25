@@ -8,6 +8,7 @@ interface FormState {
     content: string;
 }
 
+// stores/form.ts
 export const useFormStore = defineStore('form', () => {
     const formData = reactive<FormState>({
         title: '',
@@ -17,11 +18,12 @@ export const useFormStore = defineStore('form', () => {
     });
 
     function setFormData(data: Partial<FormState>) {
-        console.log('Form data being set:', data);
+        console.log('[formStore] フォームデータを更新:', data);
         Object.assign(formData, data);
     }
 
     function clearForm() {
+        console.log('[formStore] フォームデータをクリア');
         formData.title = '';
         formData.category = '';
         formData.rating = 0;
@@ -34,5 +36,5 @@ export const useFormStore = defineStore('form', () => {
         clearForm
     }
 }, {
-    persist: true  // 単純に true にする
+    persist: true
 });
