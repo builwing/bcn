@@ -1,6 +1,3 @@
-はい、`crop-image.vue`の完全なコードを提供します：
-
-```vue
 <template>
   <div class="bg-gray-100 min-h-screen py-8">
     <div class="max-w-4xl mx-auto px-4">
@@ -95,6 +92,10 @@ interface CropperRef {
   };
 }
 
+interface CropperResult {
+  canvas: HTMLCanvasElement | null;
+}
+
 // ストアとルーターの設定
 const router = useRouter()
 const route = useRoute()
@@ -127,57 +128,60 @@ const handleCrop = async (): Promise<void> => {
   }
 
   try {
-    const result = cropperRef.value.getResult({
+    const result: CropperResult = cropperRef.value.getResult({
       width: 1000,
       height: 800,
       mimeType: 'image/jpeg',
       quality: 0.9,
     })
 
-    // キャンバスのnullチェック
-    if (!result?.canvas) {
+    if (!result || !result.canvas) {
       console.error('キャンバスの取得に失敗しました')
       return
     }
 
     const canvas = result.canvas
-    const newDataURL = canvas.toDataURL('image/jpeg', 0.9)
-    croppedImage.value = newDataURL
+    croppedImage.value = canvas.toDataURL('image/jpeg', 0.9)
 
-    // Blobの作成と処理
-    await new Promise<void>((resolve, reject) => {
-      canvas.toBlob((blob) => {
-        if (!blob || currentIndex.value === null) {
-          reject(new Error('Blobの生成に失敗したか、インデックスが無効です'))
-          return
-        }
+    try {
+      await new Promise<void>((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error('Blobの生成に失敗しました'))
+            return
+          }
 
-        try {
-          const croppedFile = new File([blob], `cropped-image-${currentIndex.value}.jpg`, {
-            type: 'image/jpeg',
-            lastModified: Date.now()
-          })
+          if (currentIndex.value === null) {
+            reject(new Error('インデックスが無効です'))
+            return
+          }
 
-          // ストアの更新
-          imageStore.updateCroppedImage(currentIndex.value, croppedFile)
-          imageStore.updatePreviewUrl(currentIndex.value, newDataURL)
+          try {
+            const croppedFile = new File([blob], `image-${currentIndex.value}.jpg`, {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            })
 
-          console.log('クロップ処理が完了しました', {
-            index: currentIndex.value,
-            fileName: croppedFile.name,
-            fileSize: croppedFile.size
-          })
+            // 既存の画像を上書き
+            imageStore.updateImage(currentIndex.value, croppedFile, croppedImage.value)
+            console.log('画像を更新しました:', {
+              index: currentIndex.value,
+              fileName: croppedFile.name,
+              fileSize: croppedFile.size
+            })
 
-          resolve()
-        } catch (error) {
-          console.error('ファイル作成エラー:', error)
-          reject(error)
-        }
-      }, 'image/jpeg', 0.9)
-    })
+            resolve()
+          } catch (error) {
+            reject(new Error('ファイルの作成に失敗しました: ' + error))
+          }
+        }, 'image/jpeg', 0.9)
+      })
 
-    await router.push('/posts/create')
-
+      await router.push('/posts/create')
+    } catch (error) {
+      console.error('Blob処理エラー:', error)
+      throw error
+    }
   } catch (error) {
     console.error('クロップ処理エラー:', error)
   }
@@ -188,30 +192,34 @@ onMounted(async () => {
   try {
     console.log('クロップページがマウントされました')
 
-    const index = parseInt(route.query.index as string)
+    const indexStr = route.query.index
+    if (!indexStr || typeof indexStr !== 'string') {
+      throw new Error('インデックスが指定されていません')
+    }
+
+    const index = parseInt(indexStr)
     console.log('クエリパラメータのインデックス:', index)
 
     if (!Number.isInteger(index)) {
-      console.error('クエリのインデックスが不正です')
-      await router.push('/posts/create')
-      return
+      throw new Error('インデックスが不正です')
     }
 
     currentIndex.value = index
     const previewUrl = imageStore.getPreviewUrl(index)
 
     if (!previewUrl) {
-      console.error('画像データが見つかりません')
-      await router.push('/posts/create')
-      return
+      throw new Error('画像データが見つかりません')
     }
 
     // 画像の読み込みを待機
-    await new Promise<void>((resolve) => {
+    await new Promise<void>((resolve, reject) => {
       const img = new Image()
       img.onload = () => {
         console.log('画像の読み込みが完了しました')
         resolve()
+      }
+      img.onerror = () => {
+        reject(new Error('画像の読み込みに失敗しました'))
       }
       img.src = previewUrl
     })
