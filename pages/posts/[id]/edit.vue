@@ -476,10 +476,16 @@ const handleSubmit = async () => {
     });
 
 // 新規アップロード画像の処理
-form.images.forEach((image, index) => {
-   const croppedImage = imageStore.croppedImages[index];
-   formData.append(`new_images[${index}]`, croppedImage || image);
- });
+form.images.forEach((originalImage, index) => {
+  // クロップ済み画像があるか確認
+  const croppedImage = imageStore.croppedImages[index];  // getCroppedImage() から直接アクセスに変更
+  
+  if (croppedImage) {
+    formData.append(`new_images[${index}]`, croppedImage);
+  } else {
+    formData.append(`new_images[${index}]`, originalImage);
+  }
+});
 
  // デバッグ用ログ
  for (const [key, value] of formData.entries()) {
