@@ -52,6 +52,104 @@ export const useUserStore = defineStore('user', {
 
     actions: {
         // ... 他のアクション
+        async login(credentials: { email: string; password: string }) {
+            const config = useRuntimeConfig();
+            const token = useCookie('token', {
+                maxAge: 60 * 60 * 24,
+                secure: false, // localhost用に設定変更
+                sameSite: 'lax',
+                path: '/',
+                domain: 'localhost'
+            });
+
+            this.isLoading = true;
+            console.log('[useUserStore] ログイン処理開始...');
+
+            try {
+                // CSRFトークンの取得
+                await $fetch(config.public.sanctumEndpoint, {
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                // ログインリクエスト
+                const response = await $fetch<LoginResponse>(`${config.public.apiBase}/login`, {
+                    method: 'POST',
+                    body: credentials,
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Authorization': `Bearer ${token.value}`  // トークンを Authorization ヘッダーに追加
+                    }
+                });
+
+                console.log('[useUserStore] ログイン成功:', response);
+
+                if (response.token) {
+                    token.value = response.token;
+                    this.user = response.user;
+                    this.isLogin = true;
+                    return { success: true };
+                }
+
+                throw new Error('認証に失敗しました');
+            } catch (error) {
+                console.error('[useUserStore] ログインエラー:', error);
+                this.user = null;
+                this.isLogin = false;
+                token.value = null;
+                throw error;
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        async logout() {
+            const config = useRuntimeConfig();
+            const token = useCookie('token');
+            const router = useRouter();
+
+            try {
+                // クライアント側の状態をクリア
+                this.user = null;
+                this.isLogin = false;
+                token.value = null;
+
+                // 全てのクッキーを削除
+                const cookies = document.cookie.split(';');
+                for (let cookie of cookies) {
+                    const eqPos = cookie.indexOf('=');
+                    const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+                    document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+                }
+
+                // トップページへ遷移
+                await router.push('/');
+
+                // バックグラウンドでサーバー側のログアウト処理を実行
+                await $fetch(`${config.public.apiBase}/logout`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Authorization': `Bearer ${token.value}`  // トークンを Authorization ヘッダーに追加
+                    }
+                }).catch(error => {
+                    console.error('バックグラウンドログアウトエラー:', error);
+                });
+
+            } catch (error) {
+                console.error('[useUserStore] ログアウトエラー:', error);
+                throw error;
+            }
+        },
 
         async checkAuth(): Promise<boolean> {
             console.log('checkAuthを開始します');
