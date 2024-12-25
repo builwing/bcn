@@ -470,7 +470,7 @@ const handleSubmit = async () => {
     formData.append('rating', form.rating.toString());
     formData.append('content', form.content);
     
-    // 残っている既���の画像のIDを送信
+    // 残っている既存の画像のIDを送信
     existingImages.value.forEach((image, index) => {
       formData.append(`existing_images[${index}]`, image.id.toString());
     });

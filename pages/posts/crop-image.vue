@@ -155,8 +155,7 @@
   // クロップ処理
   const handleCrop = async () => {
     const cropper = cropperRef.value
-    if (!cropper) return
-  
+    if (!cropper || currentIndex.value === null) return  
     try {
       // getResult() で編集後のcanvasを取得
       const result = cropper.getResult({
