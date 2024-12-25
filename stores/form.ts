@@ -8,29 +8,31 @@ interface FormState {
     content: string;
 }
 
-export const useFormStore = defineStore('form', {
-    state: (): FormState => ({
+export const useFormStore = defineStore('form', () => {
+    const formData = reactive<FormState>({
         title: '',
         category: '',
         rating: 0,
         content: ''
-    }),
+    });
 
-    actions: {
-        setFormData(data: Partial<FormState>) {
-            if (data.title) this.title = data.title
-            if (data.category) this.category = data.category
-            if (data.rating) this.rating = data.rating
-            if (data.content) this.content = data.content
-        },
+    function setFormData(data: Partial<FormState>) {
+        console.log('Form data being set:', data);
+        Object.assign(formData, data);
+    }
 
-        clearForm() {
-            this.title = ''
-            this.category = ''
-            this.rating = 0
-            this.content = ''
-        }
-    },
+    function clearForm() {
+        formData.title = '';
+        formData.category = '';
+        formData.rating = 0;
+        formData.content = '';
+    }
 
-    persist: true
-})
+    return {
+        formData,
+        setFormData,
+        clearForm
+    }
+}, {
+    persist: true  // 単純に true にする
+});
