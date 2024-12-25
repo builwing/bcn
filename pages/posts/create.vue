@@ -3,7 +3,6 @@
     <div class="max-w-4xl mx-auto px-4">
       <!-- ヘッダー部分 -->
       <div class="mb-8">
-        <!-- ページ遷移は NuxtLink で -->
         <NuxtLink to="/posts" class="btn-primary inline-block mb-4">
           ← 投稿一覧へ戻る
         </NuxtLink>
@@ -146,18 +145,15 @@
           </p>
 
           <!-- 画像プレビュー -->
-          <div
-            v-if="Object.keys(imageStore.previewUrls).length > 0"
-            class="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"
-          >
+          <div v-if="imageStore.hasImages" class="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             <div
-              v-for="(url, index) in imageStore.previewUrls"
+              v-for="(imageData, index) in imageStore.getAllImages()"
               :key="index"
               class="relative group"
             >
               <img
-                :src="url"
-                alt="プレビュー"
+                :src="imageData.previewUrl"
+                :alt="`プレビュー ${index + 1}`"
                 class="w-full h-32 object-cover rounded-lg cursor-pointer"
                 @click="openCropPage(index)"
               />
@@ -201,273 +197,188 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
-import { useRouter } from 'vue-router';
-import { useRuntimeConfig, navigateTo } from 'nuxt/app';
-import { useImageStore } from '~/stores/images';
-import { useUserStore } from '~/stores/user';
-import { useFormStore } from '~/stores/form';
+import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { useImageStore } from '~/stores/images'
+import { useUserStore } from '~/stores/user'
+import { useFormStore } from '~/stores/form'
 
-// ----- インターフェース定義 -----
+// インターフェース定義
 interface FormErrors {
-  title?: string;
-  category?: string;
-  rating?: string;
-  content?: string;
-  images?: string;
+  title?: string
+  category?: string
+  rating?: string
+  content?: string
+  images?: string
 }
 
 interface FormState {
-  title: string;
-  category: string;
-  rating: number;
-  content: string;
-  images: File[];
+  title: string
+  category: string
+  rating: number
+  content: string
 }
 
-// ----- ルータ・ストア等の取得 -----
-const router = useRouter();
-const route = useRoute();
-const imageStore = useImageStore();
-const userStore = useUserStore();
-const formStore = useFormStore();
+// ストアとルーターの設定
+const router = useRouter()
+const route = useRoute()
+const imageStore = useImageStore()
+const userStore = useUserStore()
+const formStore = useFormStore()
 
-// ----- フォームの状態管理 -----
+// フォームの状態管理
 const form = reactive<FormState>({
   title: formStore.formData.title,
   category: formStore.formData.category,
   rating: formStore.formData.rating,
-  content: formStore.formData.content,
-  images: []
-});
-
-// ページ読み込み時に既存の画像を復元
-onMounted(() => {
-  const indices = [...new Set([
-    ...Object.keys(imageStore.originalImages),
-    ...Object.keys(imageStore.croppedImages)
-  ])].map(Number).sort((a, b) => a - b)
-
-  form.images = indices.map(index => 
-    imageStore.croppedImages[index] || imageStore.originalImages[index]
-  ).filter(Boolean)
-
-  console.log('画像を復元:', {
-    formImages: form.images.length,
-    originalImages: Object.keys(imageStore.originalImages),
-    croppedImages: Object.keys(imageStore.croppedImages)
-  })
+  content: formStore.formData.content
 })
-// クロップページから戻ってきたときの処理
-watch(
-  () => route.path,
-  (newPath) => {
-    if (newPath === '/posts/create') {
-      // imageStoreの状態を確認
-      console.log('ページ遷移後の画像状態:', {
-        originalImages: Object.keys(imageStore.originalImages).length,
-        croppedImages: Object.keys(imageStore.croppedImages).length,
-        previewUrls: Object.keys(imageStore.previewUrls).length
-      });
 
-      // form.imagesを更新
-      const indices = Object.keys(imageStore.originalImages).map(Number);
-      form.images = indices.map(index => imageStore.originalImages[index]);
-    }
-  }
-);
-
-//フォームの値が変更されたときにストアを更新
-watch(() => [imageStore.originalImages, imageStore.croppedImages], 
-  ([newOriginal, newCropped]) => {
-    // 画像の配列を更新
-    const indices = [...new Set([
-      ...Object.keys(newOriginal),
-      ...Object.keys(newCropped)
-    ])].map(Number).sort((a, b) => a - b)
-
-    form.images = indices.map(index => 
-      imageStore.croppedImages[index] || imageStore.originalImages[index]
-    ).filter(Boolean)
-  },
-  { deep: true }
-)
-
-// ----- エラー状態管理（ref でラップ） -----
-const errors = ref<FormErrors>({});
-
-// ----- その他の状態管理 -----
-const isSubmitting = ref(false);
-const fileInput = ref<HTMLInputElement | null>(null);
+// エラー状態と送信状態の管理
+const errors = ref<FormErrors>({})
+const isSubmitting = ref(false)
+const fileInput = ref<HTMLInputElement | null>(null)
 
 // カテゴリーリスト
-const categories: string[] = [
+const categories = [
   '美容整形',
   '化粧品',
   '健康器具',
   'その他'
-];
+]
 
-// ----- 画像アップロード関連のメソッド -----
+// フォーム値の監視
+watch(
+  () => ({
+    title: form.title,
+    category: form.category,
+    rating: form.rating,
+    content: form.content
+  }),
+  (newVal) => {
+    formStore.setFormData(newVal)
+  },
+  { deep: true }
+)
+
+// ファイル選択のトリガー
 const triggerFileInput = () => {
-  fileInput.value?.click();
-};
+  fileInput.value?.click()
+}
 
+// ファイル選択ハンドラー
 const handleFileSelect = (event: Event) => {
-  const files = Array.from((event.target as HTMLInputElement).files || []);
-  addImages(files);
-};
+  const files = Array.from((event.target as HTMLInputElement).files || [])
+  addImages(files)
+}
 
+// ドロップハンドラー
 const handleDrop = (event: DragEvent) => {
-  const files = Array.from(event.dataTransfer?.files || []);
-  addImages(files);
-};
+  const files = Array.from(event.dataTransfer?.files || [])
+  addImages(files)
+}
 
-// ----- 画像追加処理 -----
-// 画像追加処理の修正
+// 画像追加処理
 const addImages = async (files: File[]) => {
-    const imageFiles = files.filter((file) => file.type.startsWith('image/'));
-    const currentImagesCount = Object.keys(imageStore.previewUrls).length;
-    const totalImages = currentImagesCount + imageFiles.length;
-    
-    if (totalImages > 10) {
-        alert('画像は最大10枚までアップロードできます');
-        return;
-    }
+  const imageFiles = files.filter(file => file.type.startsWith('image/'))
+  const currentImageCount = imageStore.getImageIndices().length
+  const totalImages = currentImageCount + imageFiles.length
 
-    for (const file of imageFiles) {
-        const currentIndex = currentImagesCount + imageFiles.indexOf(file);
-        try {
-            const reader = new FileReader();
-            await new Promise<void>((resolve, reject) => {
-                reader.onload = (e) => {
-                    if (e.target?.result && typeof e.target.result === 'string') {
-                        imageStore.setOriginalImage(currentIndex, file, e.target.result);
-                        resolve();
-                    } else {
-                        reject(new Error('FileReader の結果が不正です'));
-                    }
-                };
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        } catch (error) {
-            console.error('画像処理中にエラー:', error);
+  if (totalImages > 10) {
+    alert('画像は最大10枚までアップロードできます')
+    return
+  }
+
+  let nextIndex = currentImageCount
+
+  for (const file of imageFiles) {
+    try {
+      const reader = new FileReader()
+      await new Promise<void>((resolve, reject) => {
+        reader.onload = (e) => {
+          if (e.target?.result && typeof e.target.result === 'string') {
+            imageStore.setImage(nextIndex, file, e.target.result)
+            console.log(`画像を追加: ${nextIndex}`)
+            nextIndex++
+            resolve()
+          } else {
+            reject(new Error('FileReader error'))
+          }
         }
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+    } catch (error) {
+      console.error('画像処理エラー:', error)
     }
-};
+  }
+}
 
-// ----- 画像クリック → クロップページへ遷移 -----
+// クロップページを開く
 const openCropPage = (index: number) => {
-  console.log('クロップページを開きます:', index, {
-    プレビューURL: imageStore.getPreviewUrl(index)?.slice(0, 100) + '...',
-    ストアの状態: {
-      プレビューURL一覧: Object.keys(imageStore.previewUrls),
-      オリジナル画像一覧: Object.keys(imageStore.originalImages),
-    }
-  });
-  // Nuxt Router (Vue Router ラッパ) を使用
-  router.push(`/posts/crop-image?index=${index}`);
-};
+  router.push(`/posts/crop-image?index=${index}`)
+}
 
-// ----- 画像の削除 -----
+// 画像を削除
 const removeImage = (index: number) => {
-  form.images.splice(index, 1);
-  imageStore.removeImage(index);
-};
+  imageStore.removeImage(index)
+}
 
-// ----- フォーム送信処理 -----
+// フォーム送信処理
 const handleSubmit = async () => {
-  if (isSubmitting.value) return;
-  isSubmitting.value = true;
-  errors.value = {};
+  if (isSubmitting.value) return
+  isSubmitting.value = true
+  errors.value = {}
 
   try {
-    const formData = new FormData();
-    formData.append('title', form.title);
-    formData.append('category', form.category);
-    formData.append('rating', form.rating.toString());
-    formData.append('content', form.content);
+    const formData = new FormData()
+    formData.append('title', form.title)
+    formData.append('category', form.category)
+    formData.append('rating', form.rating.toString())
+    formData.append('content', form.content)
 
-    // 画像の処理
-    console.log('送信前の画像状態:', {
-      formImages: form.images.length,
-      originalImages: Object.keys(imageStore.originalImages),
-      croppedImages: Object.keys(imageStore.croppedImages),
-      previewUrls: Object.keys(imageStore.previewUrls)
-    });
+    // 画像の追加
+    const images = imageStore.getAllImages()
+    images.forEach((imageData, index) => {
+      formData.append('images[]', imageData.file)
+    })
 
-    // すべての画像インデックスを取得
-    const allIndices = Array.from(
-      new Set([
-        ...Object.keys(imageStore.originalImages),
-        ...Object.keys(imageStore.croppedImages)
-      ])
-    ).map(Number).sort((a, b) => a - b);
+    const response = await userStore.createPost(formData)
+    console.log('投稿成功:', response)
 
-    // インデックスごとに処理
-    allIndices.forEach(index => {
-      const croppedImage = imageStore.croppedImages[index];
-      const originalImage = imageStore.originalImages[index];
-      
-      if (croppedImage) {
-        console.log(`クロップ済み画像を追加 (index: ${index}):`, {
-          name: croppedImage.name,
-          size: croppedImage.size,
-          type: croppedImage.type
-        });
-        formData.append('images[]', croppedImage);
-      } else if (originalImage) {
-        console.log(`オリジナル画像を追加 (index: ${index}):`, {
-          name: originalImage.name,
-          size: originalImage.size,
-          type: originalImage.type
-        });
-        formData.append('images[]', originalImage);
-      }
-    });
-
-    // FormDataの内容を確認
-    console.log('FormData contents:');
-    for (const [key, value] of formData.entries()) {
-      if (value instanceof File) {
-        console.log(`${key}: File (${value.name}, ${value.size} bytes, ${value.type})`);
-      } else {
-        console.log(`${key}: ${value}`);
-      }
-    }
-
-    const response = await userStore.createPost(formData);
-    console.log('投稿成功:', response);
-
-    // 送信成功後にクリア
-    formStore.clearForm();
-    imageStore.clearImages();
-    form.images = [];
-    
-    router.push('/posts');
+    formStore.clearForm()
+    imageStore.clearImages()
+    await router.push('/posts')
   } catch (error: any) {
-    console.error('投稿エラー:', error);
+    console.error('投稿エラー:', error)
     if (error?.response?.data?.errors) {
-      errors.value = error.response.data.errors;
+      errors.value = error.response.data.errors
     } else {
-      alert('投稿の作成に失敗しました。');
+      alert('投稿の作成に失敗しました。')
     }
   } finally {
-    isSubmitting.value = false;
+    isSubmitting.value = false
   }
-};
+}
+
+// ページマウント時の処理
+onMounted(() => {
+  // フォーム値の復元
+  form.title = formStore.formData.title
+  form.category = formStore.formData.category
+  form.rating = formStore.formData.rating
+  form.content = formStore.formData.content
+})
+
 // クリーンアップ
 onUnmounted(() => {
-  // ページを離れる際にimageStoreをクリア
-  imageStore.clearImages();
-});
+  if (route.path !== '/posts/create') {
+    imageStore.clearImages()
+  }
+})
 
-
-// Nuxt3 でページメタ情報を定義
+// ページメタ情報
 definePageMeta({
   middleware: ['auth']
-});
-
-
+})
 </script>
