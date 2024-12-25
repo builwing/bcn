@@ -51,7 +51,7 @@ export default defineNuxtConfig({
     public: {
       apiBase: 'https://bcl.winroad.biz/api',
       sanctumEndpoint: 'https://bcl.winroad.biz/sanctum/csrf-cookie',
-      appVersion: '0.0.1'
+      appVersion: '0.0.2'
     },
   },
   build: {
