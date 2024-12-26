@@ -498,49 +498,71 @@ const handleDelete = async () => {
 
 // フォーム送信処理
 const handleSubmit = async () => {
-  if (isSubmitting.value) return
-  isSubmitting.value = true
-  errors.value = {}
+    if (isSubmitting.value) return
+    isSubmitting.value = true
+    errors.value = {}
 
-  try {
-    const formData = new FormData()
-    formData.append('title', form.title)
-    formData.append('category', form.category)
-    formData.append('rating', form.rating.toString())
-    formData.append('content', form.content)
+    try {
+        const formData = new FormData()
 
-    // 既存の画像のIDを追加
-    existingImages.value.forEach((image, index) => {
-      formData.append(`existing_images[${index}]`, image.id.toString())
-    })
+        // nullまたは未定義の値は送信しない
+        if (form.title?.trim()) formData.append('title', form.title.trim())
+        if (form.category) formData.append('category', form.category)
+        if (form.rating) formData.append('rating', form.rating.toString())
+        if (form.content?.trim()) formData.append('content', form.content.trim())
 
-    // 新規画像の追加
-    const images = imageStore.getAllImages()
-    images.forEach((imageData, index) => {
-      formData.append(`new_images[${index}]`, imageData.file)
-    })
+        // デバッグログ
+        console.log('[handleSubmit]更新データ:', {
+            title: formData.get('title'),
+            category: formData.get('category'),
+            rating: formData.get('rating'),
+            content: formData.get('content')
+        });
 
-    // API呼び出し
-    const response = await updatePost({
-      id: postId.value,
-      formData
-    })
-    if (!response.data || response.error) {
-      throw response.error || new Error('更新に失敗しました')
+        const response = await updatePost(postId.value, formData)
+
+        if (response.error) {
+            const errorData = response.error.response?.data;
+            console.error('更新エラー詳細:', errorData);
+            
+            if (errorData?.errors) {
+                errors.value = errorData.errors;
+                const messages = Object.values(errorData.errors).flat();
+                alert(messages.join('\n'));
+            } else {
+                throw new Error(response.error.message || '更新に失敗しました');
+            }
+            return;
+        }
+
+        console.log('更新成功:', response.data);
+        router.push(`/posts/${postId.value}/show`)
+    } catch (error: any) {
+        console.error('予期せぬエラー:', error);
+        alert(error.message || '投稿の更新に失敗しました');
+    } finally {
+        isSubmitting.value = false
     }
-    // 成功時は投稿詳細ページへ
-    router.push(`/posts/${postId.value}`)
+}
 
-  } catch (error: any) {
-    console.error('更新エラー:', error)
-    if (error?.response?.data?.errors) {
-      errors.value = error.response.data.errors
-    } else {
-      alert('投稿の更新に失敗しました')
+const validateFormData = (formData: FormData): boolean => {
+    let isValid = true;
+    const requiredFields = ['title', 'category', 'content'];
+    
+    for (const field of requiredFields) {
+        if (!formData.get(field)) {
+            console.error(`必須フィールド ${field} が空です`);
+            isValid = false;
+        }
     }
-  } finally {
-    isSubmitting.value = false
-  }
+    
+    const rating = formData.get('rating');
+    if (rating && (Number(rating) < 1 || Number(rating) > 5)) {
+        console.error('評価値が範囲外です');
+        isValid = false;
+    }
+    
+    return isValid;
 }
 
 const handleImageLoadError = (index: number) => {

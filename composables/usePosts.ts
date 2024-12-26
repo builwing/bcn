@@ -41,18 +41,51 @@ export const usePosts = () => {
         }
     }
 
-    const updatePost = async (postData: any) => {
+    // usePosts.tsの修正
+    const updatePost = async (id: number, formData: FormData) => {
+        const token = useCookie('token');
+
+        // FormDataから通常のオブジェクトに変換
+        const data: Record<string, any> = {};
+        formData.forEach((value, key) => {
+            // Fileオブジェクトの場合は特別な処理が必要
+            if (value instanceof File) {
+                // ファイル送信の場合は別途処理が必要
+                console.warn('ファイルのアップロードは別途処理が必要です:', key, value);
+                return;
+            }
+            // 数値として解釈できる場合は数値に変換
+            if (!isNaN(Number(value)) && key === 'rating') {
+                data[key] = Number(value);
+            } else {
+                data[key] = value;
+            }
+        });
+
+        console.log('[usePosts:updatePost]送信データ:', data);
+
         try {
-            const response = await $fetch(`${config.public.apiBase}/posts/${postData.id}`, {
-                method: 'POST',
-                body: postData
-            })
-            return { data: response, error: null }
-        } catch (error) {
-            return { data: null, error }
+            const response = await $fetch(`${config.public.apiBase}/posts/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(data), // オブジェクトをJSON文字列に変換
+                headers: {
+                    Authorization: `Bearer ${token.value}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+            console.log('[usePosts:updatePost]レスポンス:', response);
+            return { data: response, error: null };
+        } catch (error: any) {
+            console.error('[usePost:updatePost]エラー詳細:', {
+                status: error.response?.status,
+                statusText: error.response?.statusText,
+                data: error.response?.data,
+                error
+            });
+            return { data: null, error };
         }
     }
-
     // 自分の投稿の取得
     const getMyPosts = async (category?: string) => {
         const token = useCookie('token');
@@ -72,6 +105,7 @@ export const usePosts = () => {
             return { data: null, error };
         }
     };
+
 
     // 投稿の削除
     const deletePost = async (id: number) => {
