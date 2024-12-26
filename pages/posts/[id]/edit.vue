@@ -360,46 +360,57 @@ const categories: string[] = [
 // 投稿データの取得
 onMounted(async () => {
   try {
-    console.log('投稿データの取得開始:', postId.value)
+    console.log('投稿データの取得開始:', postId.value);
 
     if (!postId.value || isNaN(postId.value)) {
-      throw new Error('無効な投稿IDです')
+      throw new Error('無効な投稿IDです');
     }
 
-    const response = await getPost(postId.value)
-    console.log('APIレスポンス:', response)
+    const response = await getPost(postId.value);
+    console.log('[edit.vue]APIレスポンス全体:', response);
+    console.log('画像データ:', response.data?.data?.images);
     if (!response.data) {
-      throw new Error('投稿データの取得に失敗しました')
+      throw new Error('投稿データの取得に失敗しました');
     }
 
-    const post = response.data.data
-    console.log('取得した投稿データ:', post)
+    const post = response.data.data;
+    console.log('取得した投稿データ:', post);
 
     // フォームに値をセット
-    form.title = post.title
-    form.category = post.category
-    form.rating = post.rating
-    form.content = post.content
+    form.title = post.title;
+    form.category = post.category;
+    form.rating = post.rating;
+    form.content = post.content;
 
     // 既存の画像をセット
     if (post.images && Array.isArray(post.images)) {
-      console.log('既存画像データ:', existingImages.value);
-      existingImages.value = post.images.map(image => ({
-        id: image.id,
-        url: image.url
-      }))
-      console.log('既存の画像をセット:', existingImages.value)
+      existingImages.value = post.images.map((image, index) => {
+        // `image`が文字列の場合に対応
+        if (typeof image === 'string') {
+          return {
+            id: index, // インデックスをIDとして割り当てる
+            url: image,
+          };
+        }
+        // 通常のオブジェクト形式に対応
+        return {
+          id: image?.id || null,
+          url: image?.url || null,
+        };
+      });
+      console.log('マッピング後の既存画像:', existingImages.value);
     } else {
-      console.log('画像データなし')
+      console.log('画像データなし');
     }
 
   } catch (error) {
-    console.error('投稿データの取得エラー:', error)
-    loadError.value = error instanceof Error ? error.message : '投稿データの取得に失敗しました'
+    console.error('投稿データの取得エラー:', error);
+    loadError.value = error instanceof Error ? error.message : '投稿データの取得に失敗しました';
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-})
+});
+
 // イベントハンドラー
 const handleBack = () => router.back()
 
