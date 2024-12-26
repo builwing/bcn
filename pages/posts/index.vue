@@ -38,6 +38,9 @@
         >
           <!-- カードヘッダー -->
           <div class="p-4 bg-pink-400 text-white">
+            <span class="text-sm bg-white text-pink-500 px-2 py-1 rounded">
+              {{ post.id }}
+            </span>
             <h2 class="text-xl font-semibold truncate">{{ post.title }}</h2>
           </div>
 

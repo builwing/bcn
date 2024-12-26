@@ -24,6 +24,7 @@
           <option value="美容整形">美容整形</option>
           <option value="化粧品">化粧品</option>
           <option value="健康器具">健康器具</option>
+          <option value="健康器具">その他</option>
         </select>
       </div>
 
@@ -49,7 +50,10 @@
         >
           <!-- カードヘッダー -->
           <div class="p-4 bg-pink-400 text-white flex justify-between items-center">
-            <h2 class="text-xl font-semibold truncate">{{ post.title }}</h2>
+            <span class="text-sm bg-white text-pink-500 px-2 py-1 rounded">
+              {{ post.id }}
+            </span>
+              <h2 class="text-xl font-semibold truncate">{{ post.title }}</h2>
             <span class="text-sm bg-white text-pink-500 px-2 py-1 rounded">
               {{ post.is_published ? '公開中' : '非公開' }}
             </span>
