@@ -1,3 +1,5 @@
+import { defineNuxtConfig } from 'nuxt/config'
+
 export default defineNuxtConfig({
   compatibilityDate: "2024-11-01",
   devtools: { enabled: false },
@@ -31,7 +33,8 @@ export default defineNuxtConfig({
   css: [
     "~/assets/css/tailwind.css",
     'vue-advanced-cropper/dist/style.css',
-
+    'highlight.js/styles/github-dark.css', // お好みのテーマを選択
+    '@/assets/css/markdown.css'
   ],
   postcss: {
     plugins: {
@@ -79,5 +82,5 @@ export default defineNuxtConfig({
         }
       ]
     }
-  },
+  }
 });
