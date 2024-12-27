@@ -1,344 +1,84 @@
+<!-- pages/posts/[id]/edit.vue -->
 <template>
   <div class="bg-gray-100 min-h-screen py-8">
     <div class="max-w-4xl mx-auto px-4">
-      <!-- ヘッダー部分 -->
-      <div class="mb-8">
-        <button @click="handleBack" class="btn-primary inline-block mb-4">
-          ← 前のページへ戻る
-        </button>
-        <h1 class="text-3xl font-bold text-gray-800">投稿の編集</h1>
-      </div>
+      <!-- 1) 戻るボタン -->
+      <BackButton @click="handleBack" />
 
-      <!-- ローディング表示 -->
+      <!-- タイトル表示 -->
+      <h1 class="text-3xl font-bold text-gray-800 mb-8">投稿の編集</h1>
+      
+      <!-- 2) ローディング中 -->
       <div v-if="isLoading" class="text-center py-8">
         <p class="text-gray-600">データを読み込み中...</p>
       </div>
 
-      <!-- エラー表示 -->
-      <div v-else-if="loadError" class="text-center py-8">
-        <p class="text-red-500">{{ loadError }}</p>
-        <button @click="handleBack" class="mt-4 btn-secondary">
-          戻る
-        </button>
-      </div>
-
-      <!-- 投稿フォーム -->
-      <form v-else @submit.prevent="handleSubmit" class="bg-white rounded-lg shadow-md p-6 space-y-6">
-        <!-- タイトル入力 -->
-        <div>
-          <label for="title" class="block text-gray-700 font-medium mb-2">
-            タイトル*
-          </label>
-          <input
-            type="text"
-            id="title"
-            v-model="form.title"
-            required
-            class="input-field"
-            :class="{ 'border-red-500': errors.title }"
-            placeholder="投稿のタイトルを入力してください"
-          />
-          <p v-if="errors.title" class="mt-1 text-sm text-red-500">
-            {{ errors.title }}
-          </p>
-        </div>
-
-        <!-- カテゴリー選択 -->
-        <div>
-          <label for="category" class="block text-gray-700 font-medium mb-2">
-            カテゴリー*
-          </label>
-          <select
-            id="category"
-            v-model="form.category"
-            required
-            class="input-field"
-            :class="{ 'border-red-500': errors.category }"
-          >
-            <option value="">カテゴリーを選択してください</option>
-            <option
-              v-for="category in categories"
-              :key="category"
-              :value="category"
-            >
-              {{ category }}
-            </option>
-          </select>
-          <p v-if="errors.category" class="mt-1 text-sm text-red-500">
-            {{ errors.category }}
-          </p>
-        </div>
-
-        <!-- 評価 -->
-        <div>
-          <label class="block text-gray-700 font-medium mb-2">
-            評価*
-          </label>
-          <div class="flex space-x-4">
-            <template v-for="ratingValue in 5" :key="ratingValue">
-              <button
-                type="button"
-                @click="handleRatingSelect(ratingValue)"
-                class="focus:outline-none"
-              >
-                <span
-                  class="text-2xl"
-                  :class="ratingValue <= form.rating ? 'text-yellow-400' : 'text-gray-300'"
-                >
-                  ★
-                </span>
-              </button>
-            </template>
-          </div>
-          <p v-if="errors.rating" class="mt-1 text-sm text-red-500">
-            {{ errors.rating }}
-          </p>
-        </div>
-
-        <!-- 本文入力 -->
-        <div>
-          <label for="content" class="block text-gray-700 font-medium mb-2">
-            本文*
-          </label>
-          <textarea
-            id="content"
-            v-model="form.content"
-            required
-            rows="6"
-            class="input-field"
-            :class="{ 'border-red-500': errors.content }"
-            placeholder="投稿の本文を入力してください"
-          ></textarea>
-          <p v-if="errors.content" class="mt-1 text-sm text-red-500">
-            {{ errors.content }}
-          </p>
-        </div>
-        <!-- 画像アップロード部分 -->
-<div>
-  <label class="block text-gray-700 font-medium mb-2">
-    画像（最大10枚まで）
-  </label>
-  <!-- 既存の画像表示 -->
-  <div v-if="existingImages.length > 0" class="mb-4">
-    <p class="text-gray-700 font-medium mb-2">既存の画像</p>
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-      <div
-        v-for="(image, index) in existingImages"
-        :key="image.id"
-        class="relative group"
-      >
-        <img
-          :src="image.url"
-          :alt="`既存の画像 ${index + 1}`"
-          class="w-full h-32 object-cover rounded-lg"
-        />
-        <button
-          type="button"
-          @click="handleExistingImageRemove(index)"
-          class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-          title="画像を削除"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 新規画像アップロードエリア -->
-  <div
-    class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-pink-500 transition-colors cursor-pointer"
-    @click="handleUploadClick"
-    @dragover.prevent
-    @drop.prevent="handleFileDrop"
-  >
-    <input
-      type="file"
-      ref="fileInput"
-      multiple
-      accept="image/*"
-      class="hidden"
-      @change="handleFileChange"
-    />
-    <div class="space-y-2">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="mx-auto h-12 w-12 text-gray-400"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-        />
-      </svg>
-      <p class="text-gray-600">
-        クリックまたはドラッグ＆ドロップで新しい画像をアップロード
-      </p>
-    </div>
-  </div>
-  
-  <!-- エラーメッセージ -->
-  <p v-if="errors.images" class="mt-1 text-sm text-red-500">
-    {{ errors.images }}
-  </p>
-
-  <!-- 新規画像プレビュー -->
-  <div
-    v-if="Object.keys(imageStore.images).length > 0"
-    class="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"
-  >
-    <div
-      v-for="(imageData, index) in imageStore.getAllImages()"
-      :key="index"
-      class="relative group"
-    >
-      <img
-        :src="imageData.previewUrl"
-        :alt="`新規画像 ${index + 1}`"
-        class="w-full h-32 object-cover rounded-lg cursor-pointer"
-        @click="handleImageEdit(index)"
+      <!-- 3) エラー表示 -->
+      <ErrorDisplay
+        v-else-if="loadError"
+        :message="loadError"
+        @onRetry="fetchPostData"
       />
-      <button
-        type="button"
-        @click.stop="handleNewImageRemove(index)"
-        class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-        title="画像を削除"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-4 w-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
-      </button>
+
+      <!-- 4) フォーム表示 -->
+      <div v-else>
+        <PostForm
+          :initialData="postFormData"
+          :existingImages="existingImages"
+          @submit="handleSubmit"
+          @cancel="handleBack"
+        />
+        
+        <!-- 削除ボタン -->
+        <div class="flex justify-end mt-4">
+          <button
+            type="button"
+            @click="handleDelete"
+            class="btn-danger"
+            :disabled="isSubmitting"
+          >
+            削除
+          </button>
+        </div>
+      </div>
     </div>
   </div>
-</div>
-
-<!-- 送信ボタン部分 -->
-<div class="flex justify-end space-x-4">
-  <button
-    type="button"
-    @click="handleBack"
-    class="btn-secondary"
-    :disabled="isSubmitting"
-  >
-    キャンセル
-  </button>
-  <button
-    type="submit"
-    class="btn-primary"
-    :disabled="isSubmitting"
-  >
-    {{ isSubmitting ? '更新中...' : '更新する' }}
-  </button>
-  <button
-    type="button"
-    @click="handleDelete"
-    class="btn-danger"
-    :disabled="isSubmitting"
-  >
-    削除
-  </button>
-</div>
-</form>
-</div>
-</div>
 </template>
-
-
-
-
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+
+import BackButton from '~/components/posts/BackButton.vue'
+import ErrorDisplay from '~/components/posts/ErrorDisplay.vue'
+import PostForm from '~/components/posts/PostForm.vue'
+
 import { useImageStore } from '~/stores/images'
 import { usePosts } from '~/composables/usePosts'
+import type { Post, PostImage } from '~/types/post'
 
-// APIレスポンスの型定義を追加
-interface PostResponse {
-  data: Post;
-  error?: Error;
-}
-
-// GetPost関数の戻り値の型を明確に
-interface APIResponse<T> {
-  data: T;
-  error?: Error;
-}
-
-// 型定義
-interface Post {
-  id: number
+// 親コンポーネントが持つフォームデータ用インターフェース
+// (imagesはbase64想定)
+interface FormDataType {
   title: string
   category: string
   rating: number
   content: string
-  images?: PostImage[]
+  images: string[]
 }
 
-interface PostImage {
-  id: number
-  url: string
-}
-
-interface FormState {
-  title: string
-  category: string
-  rating: number
-  content: string
-  images: File[]
-}
-
-interface FormErrors {
-  title?: string
-  category?: string
-  rating?: string
-  content?: string
-  images?: string
-}
-
-// ストアとルーターの設定
 const router = useRouter()
 const route = useRoute()
-const imageStore = useImageStore()
 const { getPost, updatePost, deletePost } = usePosts()
+const imageStore = useImageStore()
 
-// 状態管理
-const postId = ref<number>(Number(route.params.id))
-const existingImages = ref<PostImage[]>([])
-const fileInput = ref<HTMLInputElement | null>(null)
+// state
 const isLoading = ref(true)
-const isSubmitting = ref(false)
 const loadError = ref('')
+const isSubmitting = ref(false)
 
-// フォームの状態
-const form = reactive<FormState>({
+// 取得した投稿データをフォーム用に変換
+const postFormData = reactive<FormDataType>({
   title: '',
   category: '',
   rating: 0,
@@ -346,250 +86,114 @@ const form = reactive<FormState>({
   images: []
 })
 
-// エラー状態
-const errors = ref<FormErrors>({})
+// 既存画像（DBに保存済みの画像URLなど）
+const existingImages = ref<PostImage[]>([])
 
-// カテゴリーリスト
-const categories: string[] = [
-  '美容整形',
-  '化粧品',
-  '健康器具',
-  'その他'
-]
+// ルートパラメータ
+const postId = Number(route.params.id)
 
-// 投稿データの取得
-onMounted(async () => {
+/**
+ * マウント時に投稿データを取得
+ */
+onMounted(() => {
+  fetchPostData()
+})
+
+async function fetchPostData() {
   try {
-    console.log('投稿データの取得開始:', postId.value);
+    isLoading.value = true
+    loadError.value = ''
 
-    if (!postId.value || isNaN(postId.value)) {
-      throw new Error('無効な投稿IDです');
+    const response = await getPost(postId)
+    if (!response.data || response.error) {
+      throw response.error || new Error('投稿データの取得に失敗しました')
     }
 
-    const response = await getPost(postId.value);
-    console.log('[edit.vue]APIレスポンス全体:', response);
-    console.log('画像データ:', response.data?.data?.images);
-    if (!response.data) {
-      throw new Error('投稿データの取得に失敗しました');
-    }
+    // 取得成功時
+    const post = response.data.data as Post
+    // 親のフォームデータと既存画像を反映
+    postFormData.title = post.title
+    postFormData.category = post.category
+    postFormData.rating = post.rating
+    postFormData.content = post.content
+    postFormData.images = []
 
-    const post = response.data.data;
-    console.log('取得した投稿データ:', post);
-
-    // フォームに値をセット
-    form.title = post.title;
-    form.category = post.category;
-    form.rating = post.rating;
-    form.content = post.content;
-
-    // 既存の画像をセット
-    if (post.images && Array.isArray(post.images)) {
-      existingImages.value = post.images.map((image, index) => {
-        // `image`が文字列の場合に対応
-        if (typeof image === 'string') {
-          return {
-            id: index, // インデックスをIDとして割り当てる
-            url: image,
-          };
-        }
-        // 通常のオブジェクト形式に対応
-        return {
-          id: image?.id || null,
-          url: image?.url || null,
-        };
-      });
-      console.log('マッピング後の既存画像:', existingImages.value);
-    } else {
-      console.log('画像データなし');
-    }
-
-  } catch (error) {
-    console.error('投稿データの取得エラー:', error);
-    loadError.value = error instanceof Error ? error.message : '投稿データの取得に失敗しました';
+    existingImages.value = post.images || []
+  } catch (error: any) {
+    loadError.value = error?.message || '読み込みエラーが発生しました'
   } finally {
-    isLoading.value = false;
-  }
-});
-
-// イベントハンドラー
-const handleBack = () => router.back()
-
-const handleRatingSelect = (value: number) => {
-  form.rating = value
-}
-
-const handleUploadClick = () => {
-  fileInput.value?.click()
-}
-
-const handleFileChange = async (event: Event) => {
-  const files = Array.from((event.target as HTMLInputElement).files || [])
-  await handleImageUpload(files)
-}
-
-const handleFileDrop = async (event: DragEvent) => {
-  const files = Array.from(event.dataTransfer?.files || [])
-  await handleImageUpload(files)
-}
-
-// 画像アップロード処理
-const handleImageUpload = async (files: File[]) => {
-  const imageFiles = files.filter(file => file.type.startsWith('image/'))
-  const totalImages = imageStore.getImageIndices().length + existingImages.value.length
-  
-  if (totalImages + imageFiles.length > 10) {
-    alert('画像は最大10枚までアップロードできます')
-    return
-  }
-
-  for (const file of imageFiles) {
-    try {
-      const reader = new FileReader()
-      await new Promise<void>((resolve, reject) => {
-        reader.onload = (e) => {
-          if (e.target?.result && typeof e.target.result === 'string') {
-            const nextIndex = imageStore.getImageIndices().length
-            imageStore.setImage(nextIndex, file, e.target.result)
-            resolve()
-          } else {
-            reject(new Error('画像の読み込みに失敗しました'))
-          }
-        }
-        reader.onerror = () => reject(new Error('画像の読み込みに失敗しました'))
-        reader.readAsDataURL(file)
-      })
-    } catch (error) {
-      console.error('画像処理エラー:', error)
-    }
+    isLoading.value = false
   }
 }
 
-// 画像編集・削除処理
-const handleImageEdit = (index: number) => {
-  router.push(`/posts/crop-image?index=${index}&returnTo=edit/${postId.value}`)
+/**
+ * 前の画面に戻る
+ */
+function handleBack() {
+  router.back()
 }
 
-const handleNewImageRemove = (index: number) => {
-  imageStore.removeImage(index)
-}
-
-const handleExistingImageRemove = (index: number) => {
-  existingImages.value.splice(index, 1)
-}
-
-// 投稿削除処理
-const handleDelete = async () => {
-  if (!confirm('この投稿を削除してもよろしいですか？この操作は取り消せません。')) {
-    return
-  }
-
+/**
+ * フォーム送信 (子 @submit時)
+ */
+async function handleSubmit(updatedForm: FormDataType) {
   try {
     isSubmitting.value = true
-    await deletePost(postId.value)
-    alert('投稿を削除しました')
-    router.push('/posts')
-  } catch (error) {
-    console.error('削除エラー:', error)
-    alert('削除に失敗しました')
+
+    // 1) FormData
+    const formData = new FormData()
+    formData.append('title', updatedForm.title)
+    formData.append('category', updatedForm.category)
+    formData.append('rating', String(updatedForm.rating))
+    formData.append('content', updatedForm.content)
+
+    // 2) 既存画像ID
+    existingImages.value.forEach((img, idx) => {
+      formData.append(`existing_images[${idx}]`, String(img.id))
+    })
+
+    // 3) 新規画像 (base64 → File化は実際の運用次第)
+    updatedForm.images.forEach((base64, idx) => {
+      formData.append(`new_images[${idx}]`, base64)
+    })
+
+    // 4) API 呼び出し
+    const response = await updatePost(postId, formData)
+    if (!response.data || response.error) {
+      throw response.error || new Error('更新に失敗しました')
+    }
+
+    alert('投稿を更新しました')
+    router.push(`/posts/${postId}`)
+  } catch (error: any) {
+    console.error(error)
+    alert('投稿の更新に失敗しました')
   } finally {
     isSubmitting.value = false
   }
 }
 
-// フォーム送信処理
-const handleSubmit = async () => {
-    if (isSubmitting.value) return
+/**
+ * 投稿削除処理
+ */
+async function handleDelete() {
+  if (!confirm('この投稿を削除してもよろしいですか？')) return
+  try {
     isSubmitting.value = true
-    errors.value = {}
-
-    try {
-        const formData = new FormData()
-
-        // nullまたは未定義の値は送信しない
-        if (form.title?.trim()) formData.append('title', form.title.trim())
-        if (form.category) formData.append('category', form.category)
-        if (form.rating) formData.append('rating', form.rating.toString())
-        if (form.content?.trim()) formData.append('content', form.content.trim())
-
-        // デバッグログ
-        console.log('[handleSubmit]更新データ:', {
-            title: formData.get('title'),
-            category: formData.get('category'),
-            rating: formData.get('rating'),
-            content: formData.get('content')
-        });
-
-        const response = await updatePost(postId.value, formData)
-
-        if (response.error) {
-            const errorData = response.error.response?.data;
-            console.error('更新エラー詳細:', errorData);
-            
-            if (errorData?.errors) {
-                errors.value = errorData.errors;
-                const messages = Object.values(errorData.errors).flat();
-                alert(messages.join('\n'));
-            } else {
-                throw new Error(response.error.message || '更新に失敗しました');
-            }
-            return;
-        }
-
-        console.log('更新成功:', response.data);
-        router.push(`/posts/${postId.value}/show`)
-    } catch (error: any) {
-        console.error('予期せぬエラー:', error);
-        alert(error.message || '投稿の更新に失敗しました');
-    } finally {
-        isSubmitting.value = false
-    }
+    await deletePost(postId)
+    alert('投稿を削除しました')
+    router.push('/posts')
+  } catch (error: any) {
+    console.error(error)
+    alert('削除に失敗しました')
+  } finally {
+    isSubmitting.value = false
+  }
 }
-
-const validateFormData = (formData: FormData): boolean => {
-    let isValid = true;
-    const requiredFields = ['title', 'category', 'content'];
-    
-    for (const field of requiredFields) {
-        if (!formData.get(field)) {
-            console.error(`必須フィールド ${field} が空です`);
-            isValid = false;
-        }
-    }
-    
-    const rating = formData.get('rating');
-    if (rating && (Number(rating) < 1 || Number(rating) > 5)) {
-        console.error('評価値が範囲外です');
-        isValid = false;
-    }
-    
-    return isValid;
-}
-
-const handleImageLoadError = (index: number) => {
-  console.error(`画像の読み込みに失敗: index=${index}`)
-  // 必要に応じてエラー処理を追加
-}
-// 状態変更を監視
-watch(existingImages, (newImages) => {
-  console.log('既存画像の状態が変更されました:', newImages)
-}, { deep: true })
-
-// ページメタ情報
-definePageMeta({
-  middleware: ['auth']
-})
 </script>
 
 <style scoped>
-.btn-secondary {
-  @apply px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors;
-}
-
 .btn-danger {
   @apply px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors;
-}
-
-.input-field {
-  @apply w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400;
 }
 </style>
