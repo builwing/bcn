@@ -1,5 +1,5 @@
 // composables/usePosts.ts
-import { useRuntimeConfig } from 'nuxt/app'
+import { useRuntimeConfig, useCookie } from 'nuxt/app'
 
 export interface Post {
     id: number;
