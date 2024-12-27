@@ -2,11 +2,13 @@
   <div class="bg-gray-100 min-h-screen py-8">
     <div class="max-w-7xl mx-auto px-4">
       <!-- 戻るボタン -->
-      <div class="mb-8">
+      <BackButton @click="goBack" />
+
+      <!-- <div class="mb-8">
         <button @click="router.back()" class="btn-primary inline-block mb-4">
           ← 前のページへ戻る
         </button>
-      </div>
+      </div> -->
 
       <!-- タイトル -->
       <h1 class="text-4xl font-bold text-center text-gray-800 mb-8">
@@ -82,7 +84,7 @@
               編集
             </NuxtLink>
             <NuxtLink
-              :to="`/posts/${post.id}/show`"
+              :to="`/posts/${post.id}`"
               class="text-pink-500 font-semibold hover:underline"
             >
               詳細を見る →
@@ -103,6 +105,7 @@
 import { ref, onMounted } from "vue";
 import { usePosts } from '~/composables/usePosts';
 import { useRouter, useRoute } from 'vue-router';
+import BackButton from '~/components/posts/BackButton.vue';
 
 // ルータの取得
 const router = useRouter();
@@ -126,6 +129,16 @@ const formatDate = (dateString) => {
     minute: '2-digit'
   }).format(date);
 };
+
+// 戻る機能
+const goBack = () => {
+  if (window.history.length > 1) {
+    router.back();
+  } else {
+    router.push('/posts');
+  }
+};
+
 
 // マイ投稿データ取得
 const fetchMyPosts = async () => {
