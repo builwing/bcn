@@ -8,7 +8,6 @@ interface FormState {
     content: string;
 }
 
-// stores/form.ts
 export const useFormStore = defineStore('form', () => {
     const formData = reactive<FormState>({
         title: '',

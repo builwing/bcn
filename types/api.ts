@@ -1,4 +1,9 @@
 // types/api.ts - API関連の型定義
+export interface User {
+    id: number;
+    name: string;
+}
+
 export interface Post {
     id: number;
     title: string;
