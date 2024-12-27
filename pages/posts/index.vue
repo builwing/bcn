@@ -61,7 +61,7 @@
           <!-- カードフッター -->
           <div class="p-4 bg-gray-50 text-right">
             <NuxtLink
-              :to="`/posts/${post.id}/show`"
+              :to="`/posts/${post.id}`"
               class="text-pink-500 font-semibold hover:underline"
             >
               詳細を見る →
@@ -78,16 +78,30 @@
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted } from "vue";
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { useRuntimeConfig } from 'nuxt/app';
+import { useHead } from '@unhead/vue';
+import type { Post, ApiResponse } from '~/types/api';
 
 const config = useRuntimeConfig();
-const posts = ref([]);
+const posts = ref<Post[]>([]);
 const isLoading = ref(true);
-const error = ref(null);
+const error = ref<string | null>(null);
+
+// SEOメタデータの設定
+useHead({
+  title: '投稿一覧 - Beauty Compass',
+  meta: [
+    {
+      name: 'description',
+      content: 'Beauty Compassの投稿一覧ページです。美容に関する様々な体験や情報をご覧いただけます。'
+    }
+  ]
+});
 
 // 日付フォーマット関数
-const formatDate = (dateString) => {
+const formatDate = (dateString: string): string => {
   if (!dateString) return '';
   const date = new Date(dateString);
   return new Intl.DateTimeFormat('ja-JP', {
@@ -105,7 +119,7 @@ const fetchPosts = async () => {
   error.value = null;
 
   try {
-    const response = await $fetch(`${config.public.apiBase}/posts`, {
+    const response = await $fetch<ApiResponse<Post[]>>(`${config.public.apiBase}/posts`, {
       credentials: 'include'
     });
     posts.value = response.data;
@@ -121,3 +135,9 @@ onMounted(() => {
   fetchPosts();
 });
 </script>
+
+<style scoped>
+.btn-primary {
+  @apply px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors;
+}
+</style>
