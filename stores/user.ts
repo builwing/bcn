@@ -53,47 +53,75 @@ export const useUserStore = defineStore('user', {
     actions: {
         // ... 他のアクション
         async login(credentials: { email: string; password: string }) {
-            const config = useRuntimeConfig();
-            const token = useCookie('token', {
-                maxAge: 60 * 60 * 24,
-                secure: false, // localhost用に設定変更
-                sameSite: 'lax',
-                path: '/',
-                domain: 'localhost'
-            });
-
+            const config = useRuntimeConfig(); // 環境設定を取得
+            const token = useCookie('token'); // トークンをクッキーに保存
+            const router = useRouter(); // Nuxtのルーター
             this.isLoading = true;
+
             console.log('[useUserStore] ログイン処理開始...');
 
+            console.log('[user.login]Sanctumエンドポイント', config.public.sanctumEndpoint);
+            console.log('[user.login]ログイン前のトークン', token.value);
+
             try {
-                // CSRFトークンの取得
+                // **2. クッキー設定の定義**
+                const cookieOptions: any = {
+                    maxAge: 60 * 60 * 24, // 1日
+                    secure: process.env.NODE_ENV === 'production', // 本番環境ではSecureを有効
+                    sameSite: 'lax', // CSRF対策
+                    path: '/', // クッキーをルートパスで使用
+                };
+
+                if (process.env.NODE_ENV === 'production') {
+                    cookieOptions.domain = '.winroad.biz'; // 本番環境ではドメインを設定
+                } else {
+                    cookieOptions.domain = 'localhost';
+                }
+
+                // **1. SanctumでCSRFトークンを取得**
+                console.log('[useUserStore] CSRFトークンを取得開始...');
                 await $fetch(config.public.sanctumEndpoint, {
-                    credentials: 'include',
+                    credentials: 'include', // クッキーを含めてリクエスト
                     headers: {
                         'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                        'X-Requested-With': 'XMLHttpRequest', // Laravelが要求するヘッダー
+                    },
                 });
+                console.log('[user.login]取得したXSRF-TOKEN', useCookie('XSRF-TOKEN').value);// 取得したCSRFトークン
 
-                // ログインリクエスト
+                // **3. ログインリクエスト**
+                console.log('[useUserStore] ログインリクエストを送信...');
+                const xsrfToken = useCookie('XSRF-TOKEN');
+                console.log('[user.login]取得したXSRF-TOKEN', xsrfToken);
+                if (!xsrfToken) {
+                    throw new Error('XSRFトークンが取得できませんでした');
+                }
+
                 const response = await $fetch<LoginResponse>(`${config.public.apiBase}/login`, {
                     method: 'POST',
-                    body: credentials,
-                    credentials: 'include',
+                    body: credentials, // メールアドレスとパスワード
+                    credentials: 'include', // クッキーを含める
                     headers: {
                         'Accept': 'application/json',
                         'Content-Type': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest',
-                        'Authorization': `Bearer ${token.value}`  // トークンを Authorization ヘッダーに追加
-                    }
+                        'X-XSRF-TOKEN': xsrfToken.value || '', // .valueを使用して文字列を取得
+                    },
                 });
 
-                console.log('[useUserStore] ログイン成功:', response);
+                console.log('[login:response] 取得したレスポンスのトークン:', response.token);
 
+                // **4. トークンとユーザーデータを保存**
                 if (response.token) {
-                    token.value = response.token;
-                    this.user = response.user;
-                    this.isLogin = true;
+                    console.log('保存前のトークン:', token.value);
+                    token.value = response.token; // クッキーにトークンを保存
+                    console.log('保存後のトークン:', token.value);
+
+                    this.user = response.user; // ユーザー情報を保存
+                    this.isLogin = true; // ログイン状態を更新
+
+                    console.log('[useUserStore] ログイン成功');
+                    await router.push('/'); // トップページにリダイレクト
                     return { success: true };
                 }
 
@@ -105,7 +133,7 @@ export const useUserStore = defineStore('user', {
                 token.value = null;
                 throw error;
             } finally {
-                this.isLoading = false;
+                this.isLoading = false; // ローディング状態を解除
             }
         },
 
@@ -115,41 +143,43 @@ export const useUserStore = defineStore('user', {
             const router = useRouter();
 
             try {
-                // クライアント側の状態をクリア
+                // **1. サーバー側のログアウト処理**
+                const headers: HeadersInit = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Authorization': `Bearer ${token.value}`,
+                };
+
+                // XSRF-TOKENが存在する場合のみ追加
+                const xsrfToken = useCookie('XSRF-TOKEN').value;
+                if (xsrfToken) {
+                    headers['X-XSRF-TOKEN'] = xsrfToken;
+                }
+
+                await $fetch(`${config.public.apiBase}/logout`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers,
+                });
+
+                // **2. クライアント側の状態をクリア**
                 this.user = null;
                 this.isLogin = false;
                 token.value = null;
 
-                // 全てのクッキーを削除
-                const cookies = document.cookie.split(';');
-                for (let cookie of cookies) {
-                    const eqPos = cookie.indexOf('=');
-                    const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
-                    document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
-                }
+                // 手動で不要なクッキーを削除
+                document.cookie = 'XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+                document.cookie = 'beauty_compass_session=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
 
-                // トップページへ遷移
+                // **4. トップページへ遷移**
                 await router.push('/');
-
-                // バックグラウンドでサーバー側のログアウト処理を実行
-                await $fetch(`${config.public.apiBase}/logout`, {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Authorization': `Bearer ${token.value}`  // トークンを Authorization ヘッダーに追加
-                    }
-                }).catch(error => {
-                    console.error('バックグラウンドログアウトエラー:', error);
-                });
-
             } catch (error) {
                 console.error('[useUserStore] ログアウトエラー:', error);
                 throw error;
             }
         },
+
 
         async checkAuth(): Promise<boolean> {
             console.log('checkAuthを開始します');
