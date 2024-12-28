@@ -1,12 +1,13 @@
 export interface Post {
-    id: number
-    title: string
-    category: string
-    rating: number
-    content: string
-    images?: PostImage[]
-    created_at?: string
-    updated_at?: string
+    id: number;                           // 投稿ID
+    title: string;                        // タイトル
+    category: string;                     // カテゴリ
+    content: string;                      // 投稿内容
+    rating: number;                       // 評価
+    images: (string | { url: string; filename?: string })[]; // 画像データ（柔軟な形式を許容）
+    user_id: number;                      // 投稿者ID
+    created_at: string;                   // 作成日時
+    updated_at: string;                   // 更新日時
 }
 
 export interface PostImage {
