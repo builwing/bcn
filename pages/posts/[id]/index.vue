@@ -22,7 +22,7 @@
       <!-- 投稿詳細 -->
       <PostDetail
         v-if="post"
-        :post="post"
+        :post="{ ...post, images: normalizeImages(post.images) }"
         :currentImageIndex="currentImageIndex"
         @update:currentImageIndex="currentImageIndex = $event"
       />
@@ -42,7 +42,7 @@
 import { ref, onMounted } from 'vue';
 import { useRuntimeConfig } from 'nuxt/app';
 import { useHead } from '@unhead/vue';
-import type { Post } from '~/types/api';
+import type { Post } from '~/composables/usePosts';
 import { usePosts } from '~/composables/usePosts';
 
 // コンポーネントのインポート
@@ -77,6 +77,19 @@ const goBack = () => {
   }
 };
 
+// 画像の正規化処理
+const normalizeImages = (images: (string | { url: string })[]): string[] => {
+    return images.map(image => {
+        if (typeof image === 'string') {
+            return image; // 文字列の場合はそのまま
+        } else if (image && 'url' in image) {
+            return image.url; // オブジェクトの場合はurl
+        }
+        return ''; // 不明な形式は空文字
+    });
+};
+
+
 // データ取得
 const fetchPost = async () => {
   isLoading.value = true;
@@ -86,11 +99,15 @@ const fetchPost = async () => {
     const postId = parseInt(route.params.id as string);
     const { data, error: fetchError } = await getPost(postId);
 
-    // APIレスポンスのデバッグ
-    console.log('API Response:', data);
-
     if (fetchError) throw fetchError;
-    post.value = data?.data ?? null;
+
+    // 投稿データを正規化してセット
+    post.value = data?.data
+    ? {
+        ...data.data,
+        images: normalizeImages(data.data.images), // 必要なら画像を正規化
+    }
+    : null;
   } catch (err) {
     console.error('投稿取得エラー:', err);
     error.value = '投稿の取得に失敗しました。';
@@ -98,6 +115,7 @@ const fetchPost = async () => {
     isLoading.value = false;
   }
 };
+
 
 // SEO
 useHead(() => ({
@@ -115,4 +133,3 @@ onMounted(() => {
   fetchPost();
 });
 </script>
-
