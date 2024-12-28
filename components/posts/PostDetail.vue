@@ -1,8 +1,8 @@
 <template>
-  <div class="bg-white rounded-lg shadow-md p-2 space-y-6">
+  <div class="bg-white rounded-lg shadow-md p-6 space-y-6">
     <!-- ヘッダー: タイトルとメタ情報 -->
     <header class="space-y-2">
-  <!-- タイトル -->
+      <!-- タイトル -->
       <h1 class="text-4xl p-4 font-bold text-gray-800 leading-tight tracking-tight mt-2">
         {{ post.title }}
       </h1>
@@ -24,77 +24,14 @@
       </div>
     </header>
 
-
     <!-- 画像スライダー -->
-    <div v-if="post.images?.length" class="relative">
-      <!-- メイン画像 -->
-      <div class="relative w-full h-[400px] rounded-lg overflow-hidden">
-        <img
-          :src="post.images[currentImageIndex]"
-          :alt="`画像 ${currentImageIndex + 1}`"
-          class="w-full h-full object-cover"
-        />
-        
-        <!-- 画像ナビゲーションボタン -->
-        <div v-if="post.images.length > 1" class="absolute inset-0 flex items-center justify-between px-4">
-          <button
-            @click="prevImage"
-            class="bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75 transition-opacity"
-            aria-label="前の画像"
-          >
-            ←
-          </button>
-          <button
-            @click="nextImage"
-            class="bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75 transition-opacity"
-            aria-label="次の画像"
-          >
-            →
-          </button>
-        </div>
-
-        <!-- 画像インジケーター -->
-        <div 
-          v-if="post.images.length > 1"
-          class="absolute bottom-4 left-0 right-0 flex justify-center space-x-2"
-        >
-          <button
-            v-for="(_, index) in post.images"
-            :key="index"
-            @click="updateCurrentImageIndex(index)"
-            class="w-2 h-2 rounded-full transition-colors"
-            :class="index === currentImageIndex ? 'bg-white' : 'bg-white bg-opacity-50'"
-            :aria-label="`画像 ${index + 1} に移動`"
-          />
-        </div>
-      </div>
-
-      <!-- サムネイル -->
-      <div 
-        v-if="post.images.length > 1"
-        class="mt-4 flex space-x-2 overflow-x-auto py-2"
-      >
-        <button
-          v-for="(image, index) in post.images"
-          :key="index"
-          @click="updateCurrentImageIndex(index)"
-          class="flex-shrink-0 w-20 h-20 rounded-md overflow-hidden"
-          :class="{ 'ring-2 ring-pink-500': index === currentImageIndex }"
-        >
-          <img
-            :src="image"
-            :alt="`サムネイル ${index + 1}`"
-            class="w-full h-full object-cover"
-          />
-        </button>
-      </div>
-    </div>
-
-    <!-- 投稿内容 -->
-    <div 
-      v-html="parsedContent" 
-      class="prose prose-pink max-w-none"
+    <ImageSlider
+      :images="post.images"
+      :currentIndex="localImageIndex"
+      @update:currentIndex="updateImageIndex"
     />
+    <!-- 投稿内容 -->
+    <div v-html="parsedContent" class="prose prose-pink max-w-none" />
 
     <!-- フッター -->
     <footer class="pt-4 border-t border-gray-200 space-y-2">
@@ -112,50 +49,56 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, computed, watch } from 'vue';
+import ImageSlider from './ImageSlider.vue';
 import type { Post } from '~/types/api';
 import { useMarkdown } from '~/composables/useMarkdown';
 
+// **Props定義**
 interface Props {
   post: Post;
   currentImageIndex: number;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  currentImageIndex: 0
+const props = defineProps<Props>();
+const emit = defineEmits(['update:currentImageIndex']);
+
+// ローカルで画像インデックスを管理
+const localImageIndex = ref(props.currentImageIndex);
+
+// Propsの変更を監視してローカルのインデックスを更新
+watch(() => props.currentImageIndex, (newIndex) => {
+  localImageIndex.value = newIndex;
 });
 
-const emit = defineEmits<{
-  (e: 'update:currentImageIndex', index: number): void;
-}>();
-
-const { parseMarkdown } = useMarkdown();
-
-// カテゴリーのラベル
-const categoryLabel: Record<string, string> = {
-  'cosmetics': '化粧品',
-  'surgery': '美容整形',
-  'equipment': '美容機器',
-  'etc': 'その他'
-};
-
-// 画像スライダーの制御
-const updateCurrentImageIndex = (index: number) => {
+// インデックスを更新して親に通知
+const updateImageIndex = (index: number) => {
+  localImageIndex.value = index;
   emit('update:currentImageIndex', index);
 };
 
-const nextImage = () => {
-  if (!props.post.images) return;
-  const nextIndex = (props.currentImageIndex + 1) % props.post.images.length;
-  updateCurrentImageIndex(nextIndex);
-};
+// 画像URLの正規化
+const normalizedImages = computed(() => {
+  return props.post.images.map(image => {
+    if (typeof image === 'string') {
+      return image; // 文字列の場合そのまま返す
+    } else if ((image as { url: string }).url) {
+      return (image as { url: string }).url; // 型アサーションで明示的に型を指定
+    } else {
+      console.error('無効な画像データ:', image);
+      return ''; // 無効なデータは空文字
+    }
+  });
+});
 
-const prevImage = () => {
-  if (!props.post.images) return;
-  const prevIndex = props.currentImageIndex === 0 
-    ? props.post.images.length - 1 
-    : props.currentImageIndex - 1;
-  updateCurrentImageIndex(prevIndex);
+const { parseMarkdown } = useMarkdown();
+
+// **カテゴリーのラベル**
+const categoryLabel: Record<string, string> = {
+  cosmetics: '化粧品',
+  surgery: '美容整形',
+  equipment: '美容機器',
+  etc: 'その他',
 };
 
 // Markdownコンテンツのパース
@@ -172,7 +115,7 @@ const formatDate = (dateString: string): string => {
     month: 'long',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   }).format(date);
 };
 </script>
