@@ -14,11 +14,6 @@
         :onRetry="fetchPost"
       />
 
-      <!-- デバッグ情報（開発時のみ） -->
-      <div v-if="isDev" class="mb-4 p-4 bg-yellow-100 rounded">
-        <pre class="text-sm">{{ post }}</pre>
-      </div>
-
       <!-- 投稿詳細 -->
       <PostDetail
         v-if="post"
@@ -34,6 +29,14 @@
       >
         <p class="text-gray-600">投稿が見つかりませんでした。</p>
       </div>
+
+      <!-- ページネーション -->
+      <PageLink
+        v-if="meta.last_page > 1"
+        :meta="meta"
+        :links="links"
+        @pageChange="handlePageChange"
+      />
     </div>
   </div>
 </template>
@@ -42,8 +45,10 @@
 import { ref, onMounted } from 'vue';
 import { useRuntimeConfig } from 'nuxt/app';
 import { useHead } from '@unhead/vue';
-import type { Post } from '~/composables/usePosts';
+import type { Post } from '~/types/api';
 import { usePosts } from '~/composables/usePosts';
+import PageLink from '~/components/posts/PageLink.vue';
+import { getPosts } from '~/composables/useApi';
 
 // コンポーネントのインポート
 import BackButton from '~/components/posts/BackButton.vue';
@@ -51,15 +56,28 @@ import LoadingState from '~/components/posts/LoadingState.vue';
 import ErrorDisplay from '~/components/posts/ErrorDisplay.vue';
 import PostDetail from '~/components/posts/PostDetail.vue';
 
-// 開発環境かどうかのフラグ
-const config = useRuntimeConfig();
-const isDev = process.env.NODE_ENV === 'development';
-
 // 状態管理
 const post = ref<Post | null>(null);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
 const currentImageIndex = ref(0);
+
+// ページネーション用の状態
+const meta = ref({
+  current_page: 1,
+  last_page: 1,
+  per_page: 12,
+  total: 0
+});
+
+type LinkValue = string | null;
+
+const links = ref<Record<string, LinkValue>>({
+  first: null,
+  last: null,
+  prev: null,
+  next: null
+});
 
 // ルーティング
 const route = useRoute();
@@ -67,6 +85,17 @@ const router = useRouter();
 
 // 投稿関連のcomposablesを使用
 const { getPost } = usePosts();
+
+// APIレスポンスの型を修正
+interface PostResponse {
+  data: Post;
+  meta?: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+}
 
 // 戻る機能
 const goBack = () => {
@@ -79,16 +108,15 @@ const goBack = () => {
 
 // 画像の正規化処理
 const normalizeImages = (images: (string | { url: string })[]): string[] => {
-    return images.map(image => {
-        if (typeof image === 'string') {
-            return image; // 文字列の場合はそのまま
-        } else if (image && 'url' in image) {
-            return image.url; // オブジェクトの場合はurl
-        }
-        return ''; // 不明な形式は空文字
-    });
+  return images.map(image => {
+    if (typeof image === 'string') {
+      return image; // 文字列の場合はそのまま
+    } else if (image && 'url' in image) {
+      return image.url; // オブジェクトの場合はurl
+    }
+    return ''; // 不明な形式は空文字
+  });
 };
-
 
 // データ取得
 const fetchPost = async () => {
@@ -97,17 +125,31 @@ const fetchPost = async () => {
 
   try {
     const postId = parseInt(route.params.id as string);
-    const { data, error: fetchError } = await getPost(postId);
+    const { data, error: fetchError } = await getPost(postId) as { 
+      data: PostResponse | null; 
+      error: any; 
+    };
 
     if (fetchError) throw fetchError;
 
     // 投稿データを正規化してセット
     post.value = data?.data
-    ? {
-        ...data.data,
-        images: normalizeImages(data.data.images), // 必要なら画像を正規化
+      ? {
+          ...data.data,
+          images: normalizeImages(data.data.images), // 必要なら画像を正規化
+        }
+      : null;
+
+    // ページネーション情報の更新
+    if (data?.meta) {
+      meta.value = data.meta;
+      links.value = {
+        first: meta.value.current_page > 1 ? 'yes' : null,
+        last: meta.value.current_page < meta.value.last_page ? 'yes' : null,
+        prev: meta.value.current_page > 1 ? 'yes' : null,
+        next: meta.value.current_page < meta.value.last_page ? 'yes' : null
+      };
     }
-    : null;
   } catch (err) {
     console.error('投稿取得エラー:', err);
     error.value = '投稿の取得に失敗しました。';
@@ -116,6 +158,21 @@ const fetchPost = async () => {
   }
 };
 
+// ページ変更時の処理
+const handlePageChange = async (page: number) => {
+  try {
+    const { data, error: fetchError } = await getPosts({ page });
+    if (fetchError) throw fetchError;
+    if (data) {
+      post.value = data.data[0];
+      meta.value = data.meta;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  } catch (err) {
+    console.error('ページ変更エラー:', err);
+    error.value = 'ページの変更に失敗しました。';
+  }
+};
 
 // SEO
 useHead(() => ({

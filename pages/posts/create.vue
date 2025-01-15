@@ -3,9 +3,9 @@
     <div class="max-w-4xl mx-auto px-4">
       <!-- ヘッダー部分 -->
       <div class="mb-8">
-        <NuxtLink to="/posts" class="btn-primary inline-block mb-4">
-          ← 投稿一覧へ戻る
-        </NuxtLink>
+      <!-- 戻るボタン -->
+      <BackButton @click="handleBack" />
+
         <h1 class="text-3xl font-bold text-gray-800">新規投稿作成</h1>
       </div>
 
@@ -202,6 +202,10 @@ import { useRouter } from 'vue-router'
 import { useImageStore } from '~/stores/images'
 import { useUserStore } from '~/stores/user'
 import { useFormStore } from '~/stores/form'
+// コンポーネントのインポート
+import BackButton from '~/components/posts/BackButton.vue';
+import PostForm from '@/components/posts/PostForm.vue';
+
 
 // インターフェース定義
 interface FormErrors {
@@ -238,6 +242,12 @@ const form = reactive<FormState>({
 const errors = ref<FormErrors>({})
 const isSubmitting = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
+
+// 戻るボタンハンドラ
+const handleBack = () => {
+  router.push('/');  // 単純に投稿一覧へ戻る
+};
+
 
 // カテゴリーリスト
 const categories = [

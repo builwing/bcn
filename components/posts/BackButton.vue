@@ -28,9 +28,3 @@ defineEmits<{
   (e: 'click'): void
 }>();
 </script>
-
-<!-- <style scoped>
-.btn-primary {
-  @apply px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors;
-}
-</style> -->
