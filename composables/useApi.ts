@@ -1,6 +1,7 @@
 // composables/useApi.ts
 // APIリクエストの共通処理を提供するComposable
-
+import { useRuntimeConfig } from 'nuxt/app';
+import type { Post, PaginatedResponse } from '~/types/api';
 import type { NitroFetchRequest, NitroFetchOptions } from 'nitropack';
 
 // **FetchOptionsインターフェース**
@@ -9,6 +10,10 @@ interface FetchOptions {
     method?: string; // リクエストのHTTPメソッド（例: GET, POST, PUT, DELETE）
     headers?: Record<string, string>; // リクエストヘッダー
     body?: any; // リクエストボディ（データ）
+}
+
+interface GetPostsParams {
+    page?: number;
 }
 
 // **Fetchオプション作成関数**
@@ -49,4 +54,26 @@ export const useApi = () => {
         baseURL, // APIのベースURL
         defaultOptions, // デフォルトのFetchオプション
     };
+};
+
+
+export const getPosts = async (params?: GetPostsParams) => {
+    const { baseURL, defaultOptions } = useApi();
+
+    try {
+        const response = await $fetch<PaginatedResponse<Post>>('/posts', {
+            ...defaultOptions,
+            params
+        });
+
+        return {
+            data: response,
+            error: null
+        };
+    } catch (error) {
+        return {
+            data: null,
+            error
+        };
+    }
 };
