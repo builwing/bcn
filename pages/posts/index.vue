@@ -75,19 +75,43 @@
         投稿がありません。
       </div>
     </div>
+    <!-- ページネーションコンポーネントの使用 -->
+    <PageLink
+      v-if="meta.last_page > 1"
+      :meta="meta"
+      :links="links"
+      @pageChange="handlePageChange"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useRuntimeConfig } from 'nuxt/app';
-import { useHead } from '@unhead/vue';
-import type { Post, ApiResponse } from '~/types/api';
+import type { Post, PaginatedResponse } from '~/types/api';
+import { getPosts } from '~/composables/useApi';
+import PageLink from '~/components/posts/PageLink.vue';
 
-const config = useRuntimeConfig();
+// 状態の定義
 const posts = ref<Post[]>([]);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
+const currentPage = ref(1);
+
+// ページネーション用の状態
+type LinkValue = string | null;
+
+const meta = ref<PaginatedResponse<Post>['meta']>({
+  current_page: 1,
+  last_page: 1,
+  per_page: 12,
+  total: 0
+});
+const links = ref<Record<string, LinkValue>>({
+  first: null,
+  last: null,
+  prev: null,
+  next: null
+});
 
 // SEOメタデータの設定
 useHead({
@@ -114,15 +138,26 @@ const formatDate = (dateString: string): string => {
 };
 
 // 投稿データ取得
-const fetchPosts = async () => {
+const fetchPosts = async (page: number = 1) => {
   isLoading.value = true;
   error.value = null;
 
   try {
-    const response = await $fetch<ApiResponse<Post[]>>(`${config.public.apiBase}/posts`, {
-      credentials: 'include'
-    });
-    posts.value = response.data;
+    const { data, error: fetchError } = await getPosts({ page });
+    
+    if (fetchError) throw fetchError;
+    
+    if (data) {
+      posts.value = data.data;
+      meta.value = data.meta;
+      // リンク情報を更新
+      links.value = {
+        first: page > 1 ? 'yes' : null,
+        last: page < data.meta.last_page ? 'yes' : null,
+        prev: page > 1 ? 'yes' : null,
+        next: page < data.meta.last_page ? 'yes' : null
+      };
+    }
   } catch (err) {
     console.error('投稿取得エラー:', err);
     error.value = 'データの取得に失敗しました。';
@@ -131,6 +166,15 @@ const fetchPosts = async () => {
   }
 };
 
+// ページ変更時の処理
+const handlePageChange = async (page: number) => {
+  currentPage.value = page;
+  await fetchPosts(page);
+  // ページトップにスクロール
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// 初期データの取得
 onMounted(() => {
   fetchPosts();
 });
