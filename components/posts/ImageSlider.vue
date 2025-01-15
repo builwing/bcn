@@ -3,11 +3,15 @@
     <!-- メイン画像表示エリア -->
     <div class="relative w-full h-[400px] rounded-lg overflow-hidden">
       <img
+        v-if="currentImageUrl"
         :src="currentImageUrl"
         :alt="`画像 ${currentIndex + 1}`"
         class="w-full h-full object-cover"
       />
-      
+      <div v-else class="w-full h-full flex items-center justify-center bg-gray-100">
+        画像がありません
+      </div>
+            
       <!-- 画像ナビゲーションボタン -->
       <div v-if="images.length > 1" class="absolute inset-0 flex items-center justify-between px-4">
         <button
@@ -105,10 +109,20 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>();
 
 // 現在の画像URLを取得
-const currentImageUrl = computed(() => getImageUrl(props.images[props.currentIndex]));
+const currentImageUrl = computed(() => {
+  // 画像配列が空、またはcurrentIndexが有効範囲外の場合のチェック
+  if (!props.images.length || props.currentIndex >= props.images.length) {
+    return ''; // またはデフォルト画像のURL
+  }
+  return getImageUrl(props.images[props.currentIndex]);
+});
+// const currentImageUrl = computed(() => getImageUrl(props.images[props.currentIndex]));
 
 // 画像URLを取得（文字列またはオブジェクトに対応）
-function getImageUrl(image: string | { url: string }): string {
+function getImageUrl(image: string | { url: string } | undefined): string {
+  if (!image) {
+    return ''; // またはデフォルト画像のURL
+  }
   return typeof image === 'string' ? image : image.url;
 }
 
