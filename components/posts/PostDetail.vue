@@ -6,22 +6,6 @@
       <h1 class="text-4xl p-4 font-bold text-gray-800 leading-tight tracking-tight mt-2">
         {{ post.title }}
       </h1>
-
-      <!-- メタ情報（カテゴリーと評価） -->
-      <div class="flex flex-wrap justify-between items-center gap-6 text-sm text-gray-600">
-        <div class="flex items-center gap-3">
-          <span class="px-2 m-2 py-2 bg-pink-200 text-pink-900 font-medium rounded-lg shadow-lg">
-            {{ categoryLabel[post.category] || post.category }}
-          </span>
-        </div>
-        <div class="flex p-2 items-center gap-3">
-          <span class="mr-2 text-base font-semibold">評価:</span>
-          <div class="flex items-center">
-            <span class="text-yellow-400 text-lg">{{ "★".repeat(post.rating) }}</span>
-            <span class="text-gray-300 text-lg">{{ "★".repeat(5 - post.rating) }}</span>
-          </div>
-        </div>
-      </div>
     </header>
 
     <!-- 画像スライダー -->
