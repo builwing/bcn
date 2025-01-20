@@ -3,9 +3,8 @@
     <div class="max-w-4xl mx-auto px-4">
       <!-- ヘッダー部分 -->
       <div class="mb-8">
-      <!-- 戻るボタン -->
-      <BackButton @click="handleBack" />
-
+        <!-- 戻るボタン -->
+        <BackButton @click="handleBack" />
         <h1 class="text-3xl font-bold text-gray-800">新規投稿作成</h1>
       </div>
 
@@ -27,77 +26,6 @@
           />
           <p v-if="errors.title" class="mt-1 text-sm text-red-500">
             {{ errors.title }}
-          </p>
-        </div>
-
-        <!-- カテゴリー選択 -->
-        <div>
-          <label for="category" class="block text-gray-700 font-medium mb-2">
-            カテゴリー*
-          </label>
-          <select
-            id="category"
-            v-model="form.category"
-            required
-            class="input-field"
-            :class="{ 'border-red-500': errors.category }"
-          >
-            <option value="">カテゴリーを選択してください</option>
-            <option
-              v-for="category in categories"
-              :key="category"
-              :value="category"
-            >
-              {{ category }}
-            </option>
-          </select>
-          <p v-if="errors.category" class="mt-1 text-sm text-red-500">
-            {{ errors.category }}
-          </p>
-        </div>
-
-        <!-- 評価 -->
-        <div>
-          <label class="block text-gray-700 font-medium mb-2">
-            評価*
-          </label>
-          <div class="flex space-x-4">
-            <template v-for="ratingValue in 5" :key="ratingValue">
-              <button
-                type="button"
-                @click="form.rating = ratingValue"
-                class="focus:outline-none"
-              >
-                <span
-                  class="text-2xl"
-                  :class="ratingValue <= form.rating ? 'text-yellow-400' : 'text-gray-300'"
-                >
-                  ★
-                </span>
-              </button>
-            </template>
-          </div>
-          <p v-if="errors.rating" class="mt-1 text-sm text-red-500">
-            {{ errors.rating }}
-          </p>
-        </div>
-
-        <!-- 本文入力 -->
-        <div>
-          <label for="content" class="block text-gray-700 font-medium mb-2">
-            本文*
-          </label>
-          <textarea
-            id="content"
-            v-model="form.content"
-            required
-            rows="6"
-            class="input-field"
-            :class="{ 'border-red-500': errors.content }"
-            placeholder="投稿の本文を入力してください"
-          ></textarea>
-          <p v-if="errors.content" class="mt-1 text-sm text-red-500">
-            {{ errors.content }}
           </p>
         </div>
 
@@ -210,17 +138,17 @@ import PostForm from '@/components/posts/PostForm.vue';
 // インターフェース定義
 interface FormErrors {
   title?: string
-  category?: string
-  rating?: string
-  content?: string
+  // category?: string
+  // rating?: string
+  // content?: string
   images?: string
 }
 
 interface FormState {
   title: string
-  category: string
-  rating: number
-  content: string
+  // category: string
+  // rating: number
+  // content: string
 }
 
 // ストアとルーターの設定
@@ -233,9 +161,6 @@ const formStore = useFormStore()
 // フォームの状態管理
 const form = reactive<FormState>({
   title: formStore.formData.title,
-  category: formStore.formData.category,
-  rating: formStore.formData.rating,
-  content: formStore.formData.content
 })
 
 // エラー状態と送信状態の管理
@@ -261,9 +186,6 @@ const categories = [
 watch(
   () => ({
     title: form.title,
-    category: form.category,
-    rating: form.rating,
-    content: form.content
   }),
   (newVal) => {
     formStore.setFormData(newVal)
@@ -343,9 +265,6 @@ const handleSubmit = async () => {
   try {
     const formData = new FormData()
     formData.append('title', form.title)
-    formData.append('category', form.category)
-    formData.append('rating', form.rating.toString())
-    formData.append('content', form.content)
 
     // 画像の追加
     const images = imageStore.getAllImages()
@@ -375,9 +294,6 @@ const handleSubmit = async () => {
 onMounted(() => {
   // フォーム値の復元
   form.title = formStore.formData.title
-  form.category = formStore.formData.category
-  form.rating = formStore.formData.rating
-  form.content = formStore.formData.content
 })
 
 // クリーンアップ
