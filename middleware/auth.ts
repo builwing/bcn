@@ -9,7 +9,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
     // トークンの存在確認
     const token = useCookie('token');
-    console.log('[Auth Middleware] トークンの確認:', token.value);
+    // console.log('[Auth Middleware] トークンの確認:', token.value);
 
     try {
         // 認証状態をチェック
