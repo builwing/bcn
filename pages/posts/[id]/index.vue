@@ -107,14 +107,12 @@ const goBack = () => {
 };
 
 // 画像の正規化処理
-const normalizeImages = (images: (string | { url: string })[]): string[] => {
-  return images.map(image => {
+const normalizeImages = (images: (string | { url: string; content?: string })[]): { url: string; content?: string }[] => {
+  return images.map((image) => {
     if (typeof image === 'string') {
-      return image; // 文字列の場合はそのまま
-    } else if (image && 'url' in image) {
-      return image.url; // オブジェクトの場合はurl
+      return { url: image }; // 文字列の場合はオブジェクトに変換
     }
-    return ''; // 不明な形式は空文字
+    return image; // 既にオブジェクトの場合はそのまま
   });
 };
 
