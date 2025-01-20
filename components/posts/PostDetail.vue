@@ -14,8 +14,12 @@
       :currentIndex="localImageIndex"
       @update:currentIndex="updateImageIndex"
     />
-    <!-- 投稿内容 -->
-    <div v-html="parsedContent" class="prose prose-pink max-w-none" />
+
+    <!-- 現在の画像のcontent -->
+    <div v-if="currentImageContent" class="text-gray-700 mt-4">
+      <h2 class="text-2xl font-semibold mb-2">画像の説明</h2>
+      <p>{{ currentImageContent }}</p>
+    </div>
 
     <!-- フッター -->
     <footer class="pt-4 border-t border-gray-200 space-y-2">
@@ -36,7 +40,6 @@
 import { ref, computed, watch } from 'vue';
 import ImageSlider from './ImageSlider.vue';
 import type { Post } from '~/types/api';
-import { useMarkdown } from '~/composables/useMarkdown';
 
 // **Props定義**
 interface Props {
@@ -61,33 +64,10 @@ const updateImageIndex = (index: number) => {
   emit('update:currentImageIndex', index);
 };
 
-// 画像URLの正規化
-const normalizedImages = computed(() => {
-  return props.post.images.map(image => {
-    if (typeof image === 'string') {
-      return image; // 文字列の場合そのまま返す
-    } else if ((image as { url: string }).url) {
-      return (image as { url: string }).url; // 型アサーションで明示的に型を指定
-    } else {
-      console.error('無効な画像データ:', image);
-      return ''; // 無効なデータは空文字
-    }
-  });
-});
-
-const { parseMarkdown } = useMarkdown();
-
-// **カテゴリーのラベル**
-const categoryLabel: Record<string, string> = {
-  cosmetics: '化粧品',
-  surgery: '美容整形',
-  equipment: '美容機器',
-  etc: 'その他',
-};
-
-// Markdownコンテンツのパース
-const parsedContent = computed(() => {
-  return parseMarkdown(props.post.content || '');
+// 現在の画像のcontentを取得
+const currentImageContent = computed(() => {
+  const currentImage = props.post.images[localImageIndex.value];
+  return currentImage?.content || '説明はありません。';
 });
 
 // 日付フォーマット
