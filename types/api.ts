@@ -1,7 +1,7 @@
 // types/api.ts - API関連の型定義
 export interface User {
-    id: number;
-    name: string;
+    url: string;
+    content: string;
 }
 
 export interface Post {
@@ -10,7 +10,7 @@ export interface Post {
     category: string;
     content: string;
     rating: number;
-    images: string[];
+    images: { url: string; content?: string }[];
     user?: {
         id: number;
         name: string;
