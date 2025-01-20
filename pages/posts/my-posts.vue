@@ -3,13 +3,6 @@
     <div class="max-w-7xl mx-auto px-4">
       <!-- 戻るボタン -->
       <BackButton @click="goBack" />
-
-      <!-- <div class="mb-8">
-        <button @click="router.back()" class="btn-primary inline-block mb-4">
-          ← 前のページへ戻る
-        </button>
-      </div> -->
-
       <!-- タイトル -->
       <h1 class="text-4xl font-bold text-center text-gray-800 mb-8">
         マイ投稿一覧
@@ -46,19 +39,18 @@
             </span>
           </div>
 
-          <!-- カードコンテンツ -->
           <div class="p-6 space-y-4">
-            <p class="text-gray-700 line-clamp-3">{{ post.content }}</p>
-            <div class="flex justify-between items-center text-sm text-gray-600">
-              <span>カテゴリー: <strong>{{ post.category }}</strong></span>
-              <span>評価: <strong class="text-yellow-500">{{ post.rating }}/5</strong></span>
-            </div>
-            <!-- 投稿日時 -->
-            <div class="text-sm text-gray-500">
-              <p>投稿日: {{ formatDate(post.created_at) }}</p>
-              <p>最終更新: {{ formatDate(post.updated_at) }}</p>
-            </div>
-          </div>
+            <!-- 画像セクション -->
+            <NuxtLink :to="`/posts/${post.id}`" class="block w-full">
+              <div class="aspect-w-16 aspect-h-9 mb-4">
+                <img
+                  :src="post.images?.[0] || '/images/no-image.jpg'"
+                  :alt="post.title"
+                  class="object-cover w-full h-48 rounded-lg hover:opacity-80 transition-opacity"
+                />
+              </div>
+            </NuxtLink>
+      </div>
 
           <!-- カードフッター -->
           <div class="p-4 bg-gray-50 flex justify-between items-center">
