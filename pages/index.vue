@@ -33,47 +33,45 @@
 
         <!-- 投稿データの表示 -->
         <div
-            v-if="!isLoading && !error && posts.length > 0"
-            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
+          v-if="!isLoading && !error && posts.length > 0"
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
         >
-        <div
-          v-for="post in posts"
-          :key="post.id"
-          class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
-        >
-          <!-- カードヘッダー -->
-          <div class="p-4 bg-pink-400 text-white">
-            <!-- <span class="text-sm bg-white text-pink-500 px-2 py-1 rounded">
-              {{ post.id }}
-            </span> -->
-            <h2 class="text-xl font-semibold truncate">{{ post.title }}</h2>
-          </div>
+          <div
+            v-for="post in posts"
+            :key="post.id"
+            class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
+          >
+            <!-- カードヘッダー -->
+            <div class="p-4 bg-pink-400 text-white">
+              <h2 class="text-xl font-semibold truncate">{{ post.title }}</h2>
+            </div>
 
-          <!-- カードコンテンツ -->
-          <div class="p-6 space-y-4">
-            <!-- 画像セクション -->
-            <NuxtLink :to="`/posts/${post.id}`" class="block w-full">
-              <div class="aspect-w-16 aspect-h-9 mb-4">
-                <img
-                  :src="post.images?.[0] || '/images/no-image.jpg'"
-                  :alt="post.title"
-                  class="object-cover w-full h-48 rounded-lg hover:opacity-80 transition-opacity"
-                />
+            <!-- カードコンテンツ -->
+            <div class="p-6 space-y-4">
+              <!-- 画像セクション -->
+              <NuxtLink :to="`/posts/${post.id}`" class="block w-full">
+                <div class="aspect-w-16 aspect-h-9 mb-4">
+                  <img
+                    :src="post.images?.[0]?.url || '/images/no-image.jpg'"
+                    :alt="post.images?.[0]?.content || post.title"
+                    class="object-cover w-full h-48 rounded-lg hover:opacity-80 transition-opacity"
+                  />
+                </div>
+              </NuxtLink>
+            </div>
+
+            <!-- カードフッター -->
+            <div class="p-4 bg-gray-50 border-t border-gray-100">
+              <div class="flex justify-between items-center text-sm text-gray-500">
+                <div class="flex items-center">
+                  <span>{{ post.user?.name }}</span>
+                </div>
+                <span>{{ formatDate(post.created_at) }}</span>
               </div>
-            </NuxtLink>
-      </div>
-
-      <!-- カードフッター -->
-      <div class="p-4 bg-gray-50 border-t border-gray-100">
-        <div class="flex justify-between items-center text-sm text-gray-500">
-          <div class="flex items-center">
-            <span>{{ post.user?.name }}</span>
+            </div>
           </div>
-          <span>{{ formatDate(post.created_at) }}</span>
         </div>
-      </div>
-    </div>
-  </div>
+
         <!-- データがない場合 -->
         <div v-else-if="!isLoading && !error" class="text-center text-gray-600">
           投稿がありません。
@@ -90,6 +88,7 @@
     </div>
   </div>
 </template>
+
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
