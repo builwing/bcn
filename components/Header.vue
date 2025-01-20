@@ -12,7 +12,6 @@
       <nav class="hidden md:flex space-x-6 items-center">
         <template v-if="isLogin && user">
           <!-- 認証済みユーザーのメニュー -->
-
           
           <div class="relative">
             <button class="flex items-center space-x-2 focus:outline-none"
@@ -118,13 +117,13 @@
             ログイン
           </NuxtLink>
         </template>
-        <NuxtLink
+        <!-- <NuxtLink
           to="/posts"
           class="hover:text-pink-200 transition-colors"
           @click="closeMenu"
         >
           投稿一覧
-        </NuxtLink>
+        </NuxtLink> -->
         <NuxtLink
           to="/about"
           class="hover:text-pink-200 transition-colors"
