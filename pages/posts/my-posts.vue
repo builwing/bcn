@@ -15,21 +15,6 @@
         マイ投稿一覧
       </h1>
 
-      <!-- カテゴリーフィルター -->
-      <div class="mb-6">
-        <select 
-          v-model="selectedCategory"
-          @change="fetchMyPosts"
-          class="w-full sm:w-auto px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
-        >
-          <option value="">全てのカテゴリー</option>
-          <option value="美容整形">美容整形</option>
-          <option value="化粧品">化粧品</option>
-          <option value="健康器具">健康器具</option>
-          <option value="健康器具">その他</option>
-        </select>
-      </div>
-
       <!-- ローディング中 -->
       <div v-if="isLoading" class="text-center text-gray-600">
         データを読み込み中...

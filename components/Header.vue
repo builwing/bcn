@@ -65,12 +65,6 @@
             サイトについて
           </NuxtLink>
         </template>
-        <NuxtLink
-          to="/posts"
-          class="hover:text-pink-200 transition-colors"
-        >
-          投稿一覧
-        </NuxtLink>
       </nav>
 
       <!-- ハンバーガーメニュー（モバイル用） -->
