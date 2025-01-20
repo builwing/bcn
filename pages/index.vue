@@ -8,17 +8,8 @@
           Beauty Compass
           <span class="block text-pink-600">あなたの美の道標に</span>
         </h1>
-        <p class="mt-3 max-w-md mx-auto text-base text-gray-700 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
-          美容整形・化粧品・健康器具の口コミ・体験談を共有し、あなたに合った美容情報をお届けします。
-        </p>
         <!-- CTAボタン -->
-        <div class="mt-10 flex justify-center gap-4">
-          <NuxtLink
-            to="/posts"
-            class="btn-primary inline-block text-center"
-          >
-            投稿一覧を見る
-          </NuxtLink>
+        <div class="mt-10 flex justify-center gap-4 mb-12">
           <NuxtLink
             to="/posts/create"
             class="btn-primary inline-block text-center"
@@ -28,76 +19,176 @@
         </div>
       </div>
 
-      <!-- 特徴セクション -->
-      <div class="mt-16">
-        <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          <!-- 特徴1 -->
-          <div class="bg-white rounded-lg shadow-lg p-6 transform hover:scale-105 transition-transform duration-300">
-            <div class="w-12 h-12 bg-pink-200 rounded-full flex items-center justify-center mb-4">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-6 w-6 text-pink-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"
-                />
-              </svg>
-            </div>
-            <h3 class="text-lg font-semibold text-gray-800 mb-2">リアルな体験談</h3>
-            <p class="text-gray-600">実際の利用者による信頼できる情報を提供します。</p>
+      <!-- 投稿一覧セクション -->
+      <div class="mt-8">
+        <!-- ローディング中 -->
+        <div v-if="isLoading" class="text-center text-gray-600">
+          データを読み込み中...
+        </div>
+
+        <!-- エラーメッセージ -->
+        <div v-else-if="error" class="text-center text-red-500 font-semibold">
+          {{ error }}
+        </div>
+
+        <!-- 投稿データの表示 -->
+        <div
+            v-if="!isLoading && !error && posts.length > 0"
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
+        >
+        <div
+          v-for="post in posts"
+          :key="post.id"
+          class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
+        >
+          <!-- カードヘッダー -->
+          <div class="p-4 bg-pink-400 text-white">
+            <!-- <span class="text-sm bg-white text-pink-500 px-2 py-1 rounded">
+              {{ post.id }}
+            </span> -->
+            <h2 class="text-xl font-semibold truncate">{{ post.title }}</h2>
           </div>
 
-          <!-- 特徴2 -->
-          <div class="bg-white rounded-lg shadow-lg p-6 transform hover:scale-105 transition-transform duration-300">
-            <div class="w-12 h-12 bg-pink-200 rounded-full flex items-center justify-center mb-4">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-6 w-6 text-pink-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+          <!-- カードコンテンツ -->
+          <div class="p-6 space-y-4">
+            <!-- 画像セクション -->
+            <NuxtLink :to="`/posts/${post.id}`" class="block w-full">
+              <div class="aspect-w-16 aspect-h-9 mb-4">
+                <img
+                  :src="post.images?.[0] || '/images/no-image.jpg'"
+                  :alt="post.title"
+                  class="object-cover w-full h-48 rounded-lg hover:opacity-80 transition-opacity"
                 />
-              </svg>
-            </div>
-            <h3 class="text-lg font-semibold text-gray-800 mb-2">詳細な比較</h3>
-            <p class="text-gray-600">製品やサービスの詳細な比較情報を提供します。</p>
-          </div>
+              </div>
+            </NuxtLink>
+      </div>
 
-          <!-- 特徴3 -->
-          <div class="bg-white rounded-lg shadow-lg p-6 transform hover:scale-105 transition-transform duration-300">
-            <div class="w-12 h-12 bg-pink-200 rounded-full flex items-center justify-center mb-4">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-6 w-6 text-pink-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"
-                />
-              </svg>
-            </div>
-            <h3 class="text-lg font-semibold text-gray-800 mb-2">活発なコミュニティ</h3>
-            <p class="text-gray-600">ユーザー同士で情報交換が可能なコミュニティを提供します。</p>
+      <!-- カードフッター -->
+      <div class="p-4 bg-gray-50 border-t border-gray-100">
+        <div class="flex justify-between items-center text-sm text-gray-500">
+          <div class="flex items-center">
+            <span>{{ post.user?.name }}</span>
           </div>
+          <span>{{ formatDate(post.created_at) }}</span>
         </div>
       </div>
     </div>
   </div>
+        <!-- データがない場合 -->
+        <div v-else-if="!isLoading && !error" class="text-center text-gray-600">
+          投稿がありません。
+        </div>
+
+        <!-- ページネーション -->
+        <PageLink
+          v-if="meta.last_page > 1"
+          :meta="meta"
+          :links="links"
+          @pageChange="handlePageChange"
+        />
+      </div>
+    </div>
+  </div>
 </template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import type { Post, PaginatedResponse } from '~/types/api';
+import { getPosts } from '~/composables/useApi';
+import PageLink from '~/components/posts/PageLink.vue';
+
+// SEOメタデータの設定
+useHead({
+  title: 'Beauty Compass - あなたの美の道標',
+  meta: [
+    {
+      name: 'description',
+      content: 'Beauty Compassは、美容整形・化粧品・健康器具の口コミ・体験談を共有するプラットフォームです。'
+    }
+  ]
+});
+
+// 状態の定義
+const posts = ref<Post[]>([]);
+const isLoading = ref(true);
+const error = ref<string | null>(null);
+const currentPage = ref(1);
+
+// ページネーション用の状態
+type LinkValue = string | null;
+
+const meta = ref<PaginatedResponse<Post>['meta']>({
+  current_page: 1,
+  last_page: 1,
+  per_page: 12,
+  total: 0
+});
+
+const links = ref<Record<string, LinkValue>>({
+  first: null,
+  last: null,
+  prev: null,
+  next: null
+});
+
+// 日付フォーマット関数
+const formatDate = (dateString: string): string => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat('ja-JP', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date);
+};
+
+// 投稿データ取得
+const fetchPosts = async (page: number = 1) => {
+  isLoading.value = true;
+  error.value = null;
+
+  try {
+    const { data, error: fetchError } = await getPosts({ page });
+    
+    if (fetchError) throw fetchError;
+    
+    if (data) {
+      posts.value = data.data;
+      meta.value = data.meta;
+      // リンク情報を更新
+      links.value = {
+        first: page > 1 ? 'yes' : null,
+        last: page < data.meta.last_page ? 'yes' : null,
+        prev: page > 1 ? 'yes' : null,
+        next: page < data.meta.last_page ? 'yes' : null
+      };
+    }
+  } catch (err) {
+    console.error('投稿取得エラー:', err);
+    error.value = 'データの取得に失敗しました。';
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// ページ変更時の処理
+const handlePageChange = async (page: number) => {
+  currentPage.value = page;
+  await fetchPosts(page);
+  // ページトップにスクロール
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// 初期データの取得
+onMounted(() => {
+  fetchPosts();
+});
+</script>
+
+<style scoped>
+.btn-primary {
+  @apply px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors;
+}
+</style>
