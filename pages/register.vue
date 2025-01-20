@@ -121,35 +121,39 @@ passwordVisible.value = !passwordVisible.value;
 };
 
 const handleRegister = async () => {
-isLoading.value = true;
-error.value = '';
+  isLoading.value = true;
+  error.value = '';
 
-try {
-  // CSRF保護の初期化
-  await $fetch(config.public.sanctumEndpoint, {
-    credentials: 'include'
-  });
-
-  // 登録リクエスト
-  const response = await $fetch(`${config.public.apiBase}/register`, {
-    method: 'POST',
-    body: form.value,
-    credentials: 'include'
-  });
-
-  // 登録成功後の処理
-  if (response.success) {
-    await userStore.login({
-      email: form.value.email,
-      password: form.value.password
+  try {
+    // CSRF保護の初期化
+    await $fetch(config.public.sanctumEndpoint, {
+      credentials: 'include'
     });
-    router.push('/dashboard');
+
+    // 登録リクエスト
+    const response = await $fetch(`${config.public.apiBase}/register`, {
+      method: 'POST',
+      body: form.value,
+      credentials: 'include'
+    });
+
+    // レスポンスにtokenが含まれていることを確認
+    if (response.token) {
+      // トークンとユーザー情報を直接セット
+      const token = useCookie('token');
+      token.value = response.token;
+      userStore.user = response.user;
+      userStore.isLogin = true;
+
+      // ダッシュボードへリダイレクト
+      await router.push('/dashboard');
+    }
+  } catch (e) {
+    console.error('登録エラー:', e);
+    error.value = '登録に失敗しました。入力内容を確認してください。';
+  } finally {
+    isLoading.value = false;
   }
-} catch (e) {
-  console.error('登録エラー:', e);
-  error.value = '登録に失敗しました。入力内容を確認してください。';
-} finally {
-  isLoading.value = false;
-}
 };
+
 </script>
