@@ -42,14 +42,14 @@
           <div class="p-6 space-y-4">
             <!-- 画像セクション -->
             <NuxtLink :to="`/posts/${post.id}`" class="block w-full">
-              <div class="aspect-w-16 aspect-h-9 mb-4">
-                <img
-                  :src="post.images?.[0] || '/images/no-image.jpg'"
-                  :alt="post.title"
-                  class="object-cover w-full h-48 rounded-lg hover:opacity-80 transition-opacity"
-                />
-              </div>
-            </NuxtLink>
+                <div class="aspect-w-16 aspect-h-9 mb-4">
+                  <img
+                    :src="post.images?.[0]?.url || '/images/no-image.jpg'"
+                    :alt="post.images?.[0]?.content || post.title"
+                    class="object-cover w-full h-48 rounded-lg hover:opacity-80 transition-opacity"
+                  />
+                </div>
+              </NuxtLink>
       </div>
 
           <!-- カードフッター -->
