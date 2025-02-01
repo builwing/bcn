@@ -141,11 +141,26 @@ export const usePosts = () => {
         }
     };
 
+    const deletePostImage = async (imageId: number) => {
+        try {
+            const response = await $fetch(`${config.public.apiBase}/images/${imageId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json',
+                }
+            })
+            return { data: response, error: null }
+        } catch (error) {
+            return { data: null, error }
+        }
+    }
+
     // Composable関数を返却
     return {
         getPost,       // 特定の投稿を取得
         updatePost,    // 投稿を更新
         getMyPosts,    // 自分の投稿を取得
         deletePost,    // 投稿を削除
+        deletePostImage,
     };
 };
