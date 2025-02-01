@@ -9,7 +9,7 @@
       </div>
 
       <h1 class="text-3xl font-bold text-gray-800 mb-8">投稿の編集</h1>
-      
+
       <!-- ローディング中 -->
       <div v-if="isLoading" class="text-center py-8">
         <p class="text-gray-600">データを読み込み中...</p>
@@ -28,42 +28,73 @@
 
       <!-- 編集フォーム -->
       <div v-else-if="post">
-        <PostEdit
-          :post="post"
-          :current-image-index="currentImageIndex"
-          @update:current-image-index="updateImageIndex"
-          @save="handleSave"
-          @cancel="handleBack"
-          @delete-image="handleDeleteImage"
-        />
-      </div>
-      <!-- 削除確認モーダル -->
-    <Modal v-if="showDeleteModal" @close="showDeleteModal = false">
-      <template #header>
-        <h3 class="text-lg font-medium text-gray-900">画像の削除確認</h3>
-      </template>
-      <template #body>
-        <p>この画像を削除してもよろしいですか？</p>
-        <p class="text-sm text-gray-500 mt-2">この操作は取り消せません。</p>
-      </template>
-      <template #footer>
-        <div class="flex justify-end gap-3">
+        <!-- ボタンコンテナ -->
+        <div class="flex justify-end mt-6 gap-4">
+          <!-- 投稿の削除ボタン -->
           <button
-            class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
-            @click="showDeleteModal = false"
+            @click="showDeletePostModal = true"
+            class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
           >
-            キャンセル
-          </button>
-          <button
-            class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-            :disabled="isDeletingImage"
-            @click="confirmDeleteImage"
-          >
-            {{ isDeletingImage ? '削除中...' : '削除する' }}
+            削除
           </button>
         </div>
-      </template>
-    </Modal>
+      </div>
+
+      <!-- 画像削除確認モーダル -->
+      <Modal v-if="showDeleteModal" @close="showDeleteModal = false">
+        <template #header>
+          <h3 class="text-lg font-medium text-gray-900">画像の削除確認</h3>
+        </template>
+        <template #body>
+          <p>この画像を削除してもよろしいですか？</p>
+          <p class="text-sm text-gray-500 mt-2">この操作は取り消せません。</p>
+        </template>
+        <template #footer>
+          <div class="flex justify-end gap-3">
+            <button
+              class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+              @click="showDeleteModal = false"
+            >
+              キャンセル
+            </button>
+            <button
+              class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              :disabled="isDeletingImage"
+              @click="confirmDeleteImage"
+            >
+              {{ isDeletingImage ? '削除中...' : '削除する' }}
+            </button>
+          </div>
+        </template>
+      </Modal>
+
+      <!-- 投稿削除確認モーダル -->
+      <Modal v-if="showDeletePostModal" @close="showDeletePostModal = false">
+        <template #header>
+          <h3 class="text-lg font-medium text-gray-900">投稿の削除確認</h3>
+        </template>
+        <template #body>
+          <p>この投稿を削除してもよろしいですか？</p>
+          <p class="text-sm text-gray-500 mt-2">この操作は取り消せません。</p>
+        </template>
+        <template #footer>
+          <div class="flex justify-end gap-3">
+            <button
+              class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+              @click="showDeletePostModal = false"
+            >
+              キャンセル
+            </button>
+            <button
+              class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              :disabled="isDeletingPost"
+              @click="confirmDeletePost"
+            >
+              {{ isDeletingPost ? '削除中...' : '削除する' }}
+            </button>
+          </div>
+        </template>
+      </Modal>
 
     </div>
   </div>
@@ -80,17 +111,49 @@ import Modal from '@/components/common/Modal.vue'
 
 const router = useRouter()
 const route = useRoute()
-const { getPost, updatePost, deletePostImage } = usePosts()
+const { getPost, updatePost, deletePost, deletePostImage } = usePosts()
 const showDeleteModal = ref(false)
 const isDeletingImage = ref(false)
 const imageToDelete = ref<{ id: number, index: number } | null>(null)
+const showDeletePostModal = ref(false)
+const isDeletingPost = ref(false)
 const isDev = process.env.NODE_ENV === 'development'
-
 
 const post = ref<Post | null>(null)
 const isLoading = ref(true)
 const loadError = ref<string | null>(null)
 const currentImageIndex = ref(0)
+const updateImageIndex = (index: number) => {
+  currentImageIndex.value = index;
+};
+
+const handleDeleteImage = (index: number) => {
+  if (!post.value?.images[index]) return;
+  imageToDelete.value = {
+    id: post.value.images[index].id,
+    index
+  };
+  showDeleteModal.value = true;
+};
+
+// 投稿の削除処理
+const confirmDeletePost = async () => {
+  if (!post.value?.id) return
+
+  isDeletingPost.value = true
+  try {
+    const { error } = await deletePost(post.value.id)
+    if (error) throw error
+
+    // 削除成功後に投稿一覧へリダイレクト
+    await router.push('/posts')
+  } catch (error) {
+    console.error('投稿の削除に失敗しました:', error)
+  } finally {
+    isDeletingPost.value = false
+    showDeletePostModal.value = false
+  }
+}
 
 // 画像削除の確認
 const confirmDeleteImage = async () => {
@@ -101,7 +164,6 @@ const confirmDeleteImage = async () => {
     const { error } = await deletePostImage(imageToDelete.value.id)
     if (error) throw error
 
-    // 成功したら画像リストから削除
     const newImages = [...post.value.images]
     newImages.splice(imageToDelete.value.index, 1)
     post.value = {
@@ -109,7 +171,6 @@ const confirmDeleteImage = async () => {
       images: newImages
     }
 
-    // インデックスの調整
     if (currentImageIndex.value >= newImages.length) {
       currentImageIndex.value = Math.max(0, newImages.length - 1)
     }
@@ -117,7 +178,6 @@ const confirmDeleteImage = async () => {
     showDeleteModal.value = false
   } catch (error) {
     console.error('画像の削除に失敗しました:', error)
-    // エラー処理を追加
   } finally {
     isDeletingImage.value = false
     imageToDelete.value = null
@@ -125,90 +185,40 @@ const confirmDeleteImage = async () => {
 }
 
 // 投稿データの取得
-// 投稿データの取得
 const fetchPostData = async () => {
-  isLoading.value = true
-  loadError.value = null
+  isLoading.value = true;
+  loadError.value = null;
 
   try {
-    const { data, error } = await getPost(Number(route.params.id))
-    if (error) throw error
-    if (!data) throw new Error('投稿データが見つかりません')
-    
+    const { data, error } = await getPost(Number(route.params.id));
+    if (error) throw error;
+    if (!data) throw new Error('投稿データが見つかりません');
+
     // 画像データを正規化
     const normalizedImages = data.data.images.map((image: any) => ({
       id: typeof image === 'string' ? null : image.id || null,
       url: typeof image === 'string' ? image : image.url,
       content: typeof image === 'string' ? '' : image.content || '',
       filename: typeof image === 'string' ? '' : image.filename || ''
-    }))
-    
+    }));
+
     post.value = {
       ...data.data,
       images: normalizedImages
-    }
+    };
   } catch (error) {
-    console.error('投稿データの取得に失敗:', error)
-    loadError.value = '投稿データの取得に失敗しました'
+    console.error('投稿データの取得に失敗:', error);
+    loadError.value = '投稿データの取得に失敗しました';
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
-// 画像インデックスの更新
-const updateImageIndex = (index: number) => {
-  currentImageIndex.value = index
-}
 
-// 保存処理
-const handleSave = async (editedPost: Post) => {
-  if (!post.value?.id) return
-
-  try {
-    const formData = new FormData()
-    
-    // 編集されたデータをFormDataに設定
-    formData.append('title', editedPost.title)
-    formData.append('content', editedPost.content)
-    
-    // 画像の説明文を更新
-    editedPost.images.forEach((image: PostImage, index: number) => {
-      if (image.content) {
-        formData.append(`images[${index}][content]`, image.content)
-      }
-      if (image.filename) {
-        formData.append(`images[${index}][filename]`, image.filename)
-      }
-      formData.append(`images[${index}][url]`, image.url)
-    })
-
-    const { error } = await updatePost(post.value.id, formData)
-    if (error) throw error
-    
-    await router.push(`/posts/${post.value.id}`)
-  } catch (error) {
-    console.error('投稿の更新に失敗しました:', error)
-  }
-}
-// 戻るボタンハンドラ
+// 戻る処理
 const handleBack = () => {
-  if (post.value?.id) {
-    router.push(`/posts/${post.value.id}`)
-  } else {
-    router.push('/posts')
-  }
+  router.push(`/posts/${post.value?.id || ''}`)
 }
 
-// 画像削除ハンドラ
-const handleDeleteImage = (index: number) => {
-  if (!post.value?.images[index]) return
-  imageToDelete.value = {
-    id: post.value.images[index].id,
-    index
-  }
-  showDeleteModal.value = true
-}
-
-// コンポーネントマウント時にデータを取得
 onMounted(fetchPostData)
 </script>
