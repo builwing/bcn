@@ -48,8 +48,6 @@
           <div class="p-6 space-y-4">
             <p class="text-gray-700 line-clamp-3">{{ post.content }}</p>
             <div class="flex justify-between items-center text-sm text-gray-600">
-              <span>カテゴリー: <strong>{{ post.category }}</strong></span>
-              <span>評価: <strong class="text-yellow-500">{{ post.rating }}/5</strong></span>
             </div>
             <!-- 投稿者と日付 -->
             <div class="text-sm text-gray-500">

@@ -7,6 +7,7 @@
         {{ post.title }}
       </h1>
     </header>
+    
 
     <!-- 画像スライダー -->
     <ImageSlider

@@ -45,7 +45,7 @@
 import { ref, onMounted } from 'vue';
 import { useRuntimeConfig } from 'nuxt/app';
 import { useHead } from '@unhead/vue';
-import type { Post } from '~/types/api';
+import type { Post, PostImage } from '~/types/api';
 import { usePosts } from '~/composables/usePosts';
 import PageLink from '~/components/posts/PageLink.vue';
 import { getPosts } from '~/composables/useApi';
@@ -107,14 +107,13 @@ const goBack = () => {
 };
 
 // 画像の正規化処理
-const normalizeImages = (images: (string | { url: string; content?: string })[]): { url: string; content?: string }[] => {
-  return images.map((image) => {
-    if (typeof image === 'string') {
-      return { url: image }; // 文字列の場合はオブジェクトに変換
-    }
-    return image; // 既にオブジェクトの場合はそのまま
-  });
-};
+const normalizeImages = (images: any[]): PostImage[] => {
+  return images.map((image, index) => ({
+    id: index + 1,
+    url: typeof image === 'string' ? image : image.url,
+    content: typeof image === 'string' ? '' : image.content || ''
+  }))
+}
 
 // データ取得
 const fetchPost = async () => {
