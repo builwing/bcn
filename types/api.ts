@@ -4,13 +4,19 @@ export interface User {
     content: string;
 }
 
+export interface PostImage {
+    id: number;
+    url: string;
+    filename?: string;
+    content?: string;
+}
+
 export interface Post {
     id: number;
     title: string;
-    category: string;
     content: string;
-    rating: number;
-    images: { url: string; content?: string }[];
+    images: PostImage[];
+    // images: { url: string; content?: string }[];
     user?: {
         id: number;
         name: string;
